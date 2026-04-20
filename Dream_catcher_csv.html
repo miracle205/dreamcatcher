@@ -3,112 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER - DIVE ENGINE</title>
+    <title>DREAMCATCHER - DIVE STATION v1.2</title>
     <style>
-        :root { --main-orange: #FF8C00; --dim-orange: rgba(255, 140, 0, 0.1); --bg-black: #0a0a0a; }
-        body { font-family: 'Courier New', Courier, monospace; background-color: var(--bg-black); color: var(--main-orange); margin: 0; padding: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; cursor: pointer; }
-        #game-container { width: 100%; max-width: 500px; height: 100%; display: flex; flex-direction: column; border-left: 1px solid var(--main-orange); border-right: 1px solid var(--main-orange); background: #111; position: relative; }
-        
-        /* 헤더 */
-        .header { padding: 15px; border-bottom: 2px solid var(--main-orange); background: #1a0f00; flex-shrink: 0; }
-        .dive-title { font-size: 1.1em; font-weight: 900; color: #fff; text-shadow: 0 0 8px var(--main-orange); }
-        .status-row { display: flex; justify-content: space-between; font-size: 0.75em; margin-top: 10px; opacity: 0.9; }
-        .status-val { color: #fff; font-weight: bold; }
+        :root { --main-orange: #FF8C00; --bg-black: #050505; --tile-size: 14px; }
+       
+        /* 전체 레이아웃 */
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: var(--bg-black); color: var(--main-orange); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; touch-action: none; }
 
-        /* 채팅 로그 */
-        #chat-log { flex: 1; background: #000; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; pointer-events: none; }
-        .msg { max-width: 90%; padding: 12px 16px; border-radius: 4px; font-size: 0.85em; line-height: 1.6; word-break: break-all; opacity: 0; transform: translateY(10px); animation: appear 0.3s forwards; }
-        @keyframes appear { to { opacity: 1; transform: translateY(0); } }
-        
-        .msg.system { align-self: center; width: 95%; background: var(--dim-orange); border: 1px dashed var(--main-orange); text-align: center; }
-        .msg.me { align-self: flex-end; border: 1px solid var(--main-orange); border-right-width: 4px; }
-        .msg.subject { align-self: flex-start; background: var(--main-orange); color: #000; border-left-width: 4px; font-weight: bold; }
+        header { padding: 10px 15px; border-bottom: 2px solid var(--main-orange); background: #1a0f00; flex-shrink: 0; }
+        #dive-id { font-size: 1.1em; font-weight: 900; color: #fff; text-shadow: 0 0 5px var(--main-orange); }
 
-        /* 하단 안내 */
-        .click-guide { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.6em; opacity: 0.4; letter-spacing: 2px; }
+        /* 로그 섹션: 번쩍임 방지 및 스크롤 최적화 */
+        #log-section { flex: 4; overflow-y: auto; padding: 20px; background: rgba(0,0,0,0.9); border-bottom: 1px solid #331a00; -webkit-overflow-scrolling: touch; }
+        .msg { margin-bottom: 12px; font-size: 0.95em; line-height: 1.6; border-left: 2px solid transparent; transition: all 0.2s; }
+        .msg.me { border-left: 3px solid var(--main-orange); padding-left: 12px; }
+        .msg.system { color: #888; font-size: 0.85em; text-align: center; background: #111; padding: 5px; margin: 10px 0; }
+
+        /* 맵 섹션: 맵이 확실히 보이도록 보정 */
+        #map-section { flex: 6; display: flex; justify-content: center; align-items: center; background: #000; position: relative; overflow: hidden; }
+        #map-grid { display: grid; border: 1px solid #442200; transform: scale(1.0); } /* 모바일에서 맵 크기가 작으면 scale로 조절 가능 */
+        .tile { width: var(--tile-size); height: var(--tile-size); border: 0.1px solid #1a0d00; }
+        .tile.wall { background: #111; }
+        .tile.path { background: #1a0f00; }
+        .tile.player { background: #fff; box-shadow: 0 0 10px #fff; border-radius: 50%; position: relative; z-index: 5; }
+        .tile.clue { background: var(--main-orange); animation: blink 1.2s infinite; }
+        @keyframes blink { 50% { opacity: 0.2; } }
+
+        /* 조작패널 */
+        #controls { position: absolute; bottom: 15px; right: 15px; display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; }
+        .btn { width: 60px; height: 60px; background: rgba(255,140,0,0.2); border: 2px solid var(--main-orange); color: var(--main-orange); display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 12px; font-size: 1.4em; touch-action: manipulation; }
+        .btn:active { background: var(--main-orange); color: #000; }
     </style>
 </head>
-<body onclick="playNextLine()">
+<body onclick="nextScenario()">
 
-<div id="game-container">
-    <div class="header">
-        <div id="dive-id" class="dive-title">LOADING DIVE DATA...</div>
-        <div class="status-row">
-            <span>SYNC: <span id="sync-val" class="status-val">0.0%</span></span>
-            <span>CLEAN: <span id="clean-val" class="status-val">100%</span></span>
-            <span>STRESS: <span id="stress-val" class="status-val">0%</span></span>
-        </div>
+<header>
+    <div id="dive-id">DIVE_MODE: READY</div>
+    <div id="map-name" style="font-size: 0.7em; opacity: 0.7;">[SCANNING CORE DATA...]</div>
+</header>
+
+<div id="log-section">
     </div>
 
-    <div id="chat-log"></div>
-    <div class="click-guide">CLICK TO CONTINUE / [SYSTEM STANDBY]</div>
+<div id="map-section" onclick="event.stopPropagation()">
+    <div id="map-grid"></div>
+    <div id="controls">
+        <div></div><div class="btn" onclick="move(0, -1)">▲</div><div></div>
+        <div class="btn" onclick="move(-1, 0)">◀</div><div class="btn" onclick="move(0, 1)">▼</div><div class="btn" onclick="move(1, 0)">▶</div>
+    </div>
 </div>
 
 <script>
     let scenarioData = [];
-    let currentIndex = 0;
-    let isTyping = false;
+    let mapData = [];
+    let currentIdx = 0;
+    let playerPos = { x: 0, y: 0 };
 
-    // 1. CSV 파일 로드 및 파싱
-    async function initEngine() {
+    async function init() {
         try {
-            const response = await fetch('scenario.csv');
-            const csvText = await response.text();
-            const rows = csvText.split('\n').filter(row => row.trim() !== '');
-            
-            rows.forEach((row, index) => {
-                const cols = row.split(',').map(c => c.trim());
-                if (cols[0] === 'TITLE') {
-                    document.getElementById('dive-id').innerText = cols[2]; // TITLE행의 Content를 제목으로
-                } else if (index > 0) {
-                    scenarioData.push({
-                        type: cols[0],
-                        sender: cols[1],
-                        content: cols[2],
-                        sync: cols[3] || 0,
-                        clean: cols[4] || 100,
-                        stress: cols[5] || 0
-                    });
-                }
-            });
-            
-            // 엔진 초기 메시지
-            console.log("DIVE ENGINE READY. TOTAL LINES:", scenarioData.length);
-            playNextLine();
+            // 깃허브에서 경로 인식을 위해 ./ 붙임
+            const [resSce, resMap] = await Promise.all([
+                fetch('./scenario.csv'),
+                fetch('./map.csv')
+            ]);
+
+            const sceText = await resSce.text();
+            scenarioData = sceText.split('\n').filter(r => r.trim()).map(r => r.split(',').map(c => c.trim()));
+           
+            // 타이틀 처리
+            const titleRow = scenarioData.find(r => r[0] === 'TITLE');
+            if(titleRow) document.getElementById('dive-id').innerText = titleRow[2];
+
+            const mapText = await resMap.text();
+            const mapRows = mapText.split('\n').filter(r => r.trim());
+            document.getElementById('map-name').innerText = `LOCATION: ${mapRows[0].split(',')[1]}`;
+            mapData = mapRows.slice(1).map(r => r.split(',').map(c => c.trim()));
+
+            renderMap();
+            addLog('system', '[SYSTEM] 인계점 도달. 동기화 프로토콜을 시작합니다.');
         } catch (e) {
-            document.getElementById('dive-id').innerText = "ERROR: CSV NOT FOUND";
-            console.error(e);
+            addLog('system', 'ERROR: 데이터 로드 실패. 파일명과 경로를 확인하세요.');
         }
     }
 
-    // 2. 다음 줄 출력 실행
-    async function playNextLine() {
-        if (isTyping || currentIndex >= scenarioData.length) return;
-        isTyping = true;
+    function renderMap() {
+        const grid = document.getElementById('map-grid');
+        if (!mapData.length) return;
+        grid.style.gridTemplateColumns = `repeat(${mapData[0].length}, var(--tile-size))`;
+        grid.innerHTML = '';
 
-        const line = scenarioData[currentIndex];
-        
-        // 수치 업데이트
-        document.getElementById('sync-val').innerText = line.sync + '%';
-        document.getElementById('clean-val').innerText = line.clean + '%';
-        document.getElementById('stress-val').innerText = line.stress + '%';
-
-        // 로그 추가
-        const log = document.getElementById('chat-log');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `msg ${line.type}`;
-        
-        let prefix = (line.sender && line.sender !== '-') ? `<strong>${line.sender}:</strong> ` : '';
-        msgDiv.innerHTML = prefix + line.content;
-        
-        log.appendChild(msgDiv);
-        log.scrollTop = log.scrollHeight;
-
-        currentIndex++;
-        setTimeout(() => { isTyping = false; }, 300); // 연속 클릭 방지
+        for (let y = 0; y < mapData.length; y++) {
+            for (let x = 0; x < mapData[y].length; x++) {
+                const tile = document.createElement('div');
+                tile.id = `tile-${x}-${y}`;
+                tile.className = 'tile ' + (mapData[y][x] === '0' ? 'wall' : mapData[y][x] === '1' ? 'path' : mapData[y][x] === 'E' ? 'clue' : '');
+                if (mapData[y][x] === 'P') { tile.classList.add('player'); playerPos = { x, y }; }
+                grid.appendChild(tile);
+            }
+        }
     }
 
-    window.onload = initEngine;
+    function nextScenario() {
+        // 타이틀 제외 대사만 필터링
+        const lines = scenarioData.filter(r => r[0] !== 'TITLE' && r[0] !== 'Type');
+        if (currentIdx >= lines.length) {
+            addLog('system', '[END] 모든 사전 데이터 조사가 완료되었습니다.');
+            return;
+        }
+        const [type, sender, content] = lines[currentIdx];
+        addLog(type, `<strong>${sender}:</strong> ${content}`);
+        currentIdx++;
+    }
+
+    function addLog(type, text) {
+        const logSec = document.getElementById('log-section');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = text;
+        logSec.appendChild(div);
+       
+        // 스크롤 멈춤 해결: 항상 최하단으로 강제 스크롤
+        setTimeout(() => {
+            logSec.scrollTo({ top: logSec.scrollHeight, behavior: 'smooth' });
+        }, 10);
+    }
+
+    function move(dx, dy) {
+        const nx = playerPos.x + dx, ny = playerPos.y + dy;
+        if (ny >= 0 && ny < mapData.length && nx >= 0 && nx < mapData[0].length && mapData[ny][nx] !== '0') {
+            document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.remove('player');
+            playerPos = { x: nx, y: ny };
+            document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.add('player');
+        }
+    }
+
+    window.onload = init;
 </script>
 </body>
 </html>
