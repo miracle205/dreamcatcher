@@ -3,54 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER - DIVE STATION v1.5</title>
+    <title>DREAMCATCHER STATION - DIVE MODE</title>
     <style>
-        :root { --main-orange: #FF8C00; --bg-black: #050505; --tile-size: 14px; }
-       
-        /* 모바일 번쩍임 및 기본 터치 방지 */
+        /* --- 이미지 기반 시각적 정체성 정의 --- */
+        :root { 
+            --main-orange: #FF8C00; /* 메인 테마 색상 */
+            --bg-black: #000000; 
+            --tile-size: 13px; /* 모바일 그리드 최적화 */
+            --font-main: 'Courier New', monospace;
+        }
+        
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; background: var(--bg-black); color: var(--main-orange); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; touch-action: none; }
+        
+        body { 
+            font-family: var(--font-main); 
+            background: var(--bg-black); 
+            color: var(--main-orange); 
+            margin: 0; padding: 0; 
+            display: flex; flex-direction: column; 
+            height: 100dvh; overflow: hidden; 
+            touch-action: none;
+            border: 2px solid var(--main-orange); /* 최외곽 프레임 복구 */
+        }
 
-        header { padding: 10px 15px; border-bottom: 2px solid var(--main-orange); background: #1a0f00; flex-shrink: 0; }
-        #dive-id { font-size: 1.1em; font-weight: 900; color: #fff; text-shadow: 0 0 5px var(--main-orange); }
+        /* --- 상단 상태 바 (이미지 완벽 구현) --- */
+        header { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid var(--main-orange); 
+            background: #000; flex-shrink: 0;
+            text-align: center;
+        }
+        .protocol-title { font-size: 0.7em; opacity: 0.7; letter-spacing: 2px; margin-bottom: 10px; }
+        .case-title { font-size: 1.2em; font-weight: 900; color: #fff; text-shadow: 0 0 5px var(--main-orange); margin-bottom: 15px; }
+        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); font-size: 0.75em; border-top: 1px solid #331a00; padding-top: 10px; }
+        .stat-val { color: #fff; font-weight: bold; }
 
-        /* 로그 섹션: 스크롤 최적화 및 타자기용 */
-        #log-section { flex: 4; overflow-y: auto; padding: 20px; background: rgba(0,0,0,0.9); border-bottom: 1px solid #331a00; -webkit-overflow-scrolling: touch; }
-        .msg { margin-bottom: 12px; font-size: 0.95em; line-height: 1.6; word-break: break-all; }
-        .msg.me { border-left: 3px solid var(--main-orange); padding-left: 12px; }
-        .msg.system { color: #888; font-size: 0.85em; text-align: center; background: #111; padding: 5px; margin: 10px 0; border: 1px dashed #333; }
+        /* --- 로그 섹션 (이미지 말풍선 스타일 유지) --- */
+        #log-section { 
+            flex: 1; overflow-y: auto; padding: 20px; 
+            background: rgba(10,10,10,0.95); 
+            border-bottom: 1px solid var(--main-orange);
+            -webkit-overflow-scrolling: touch;
+        }
+        .msg { margin-bottom: 15px; font-size: 0.9em; line-height: 1.6; padding: 10px; word-break: break-all; }
+        
+        /* 시스템 메시지: 이미지의 점선 테두리 스타일 */
+        .msg.system { border: 1px dashed var(--main-orange); color: #888; text-align: center; background: #000; }
+        
+        /* 캐릭터 대사: 이미지의 어두운 빨강 배경 스타일 */
+        .msg.me, .msg.subject { background: #330000; color: #fff; border: 1px solid #551111; border-radius: 2px; }
+        .msg strong { color: var(--main-orange); }
 
-        /* 맵 섹션 */
-        #map-section { flex: 6; display: flex; justify-content: center; align-items: center; background: #000; position: relative; overflow: hidden; }
-        #map-grid { display: grid; border: 1px solid #442200; }
+        /* --- 하단 다이브 콘솔 (이미지 선택지 영역 대체) --- */
+        #dive-console { 
+            height: 250px; /* 모바일 하단 영역 고정 */
+            display: flex; border-top: 1px solid var(--main-orange);
+            background: #0a0a0a; flex-shrink: 0;
+        }
+
+        /* 미니맵 영역 */
+        #map-section { 
+            flex: 6; display: flex; justify-content: center; align-items: center; 
+            border-right: 1px solid var(--main-orange); position: relative; overflow: hidden;
+        }
+        #map-grid { display: grid; border: 1px solid #221100; padding: 1px; }
         .tile { width: var(--tile-size); height: var(--tile-size); border: 0.1px solid #1a0d00; }
         .tile.wall { background: #111; }
         .tile.path { background: #1a0f00; }
-        .tile.player { background: #fff; box-shadow: 0 0 10px #fff; border-radius: 50%; z-index: 5; position: relative; }
+        .tile.player { background: #fff; box-shadow: 0 0 8px #fff; border-radius: 50%; z-index: 5; position: relative; }
         .tile.clue { background: var(--main-orange); animation: blink 1.2s infinite; }
         @keyframes blink { 50% { opacity: 0.2; } }
 
-        /* 조작패널 */
-        #controls { position: absolute; bottom: 15px; right: 15px; display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; }
-        .btn { width: 60px; height: 60px; background: rgba(255,140,0,0.2); border: 2px solid var(--main-orange); color: var(--main-orange); display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 12px; font-size: 1.4em; touch-action: manipulation; }
+        /* 조작 패널 영역 */
+        #control-section { flex: 4; display: flex; justify-content: center; align-items: center; }
+        #controls { display: grid; grid-template-columns: repeat(3, 50px); gap: 5px; }
+        .btn { 
+            width: 50px; height: 50px; 
+            background: rgba(255,140,0,0.1); 
+            border: 1px solid var(--main-orange); 
+            color: var(--main-orange); 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; border-radius: 5px; font-size: 1.2em; 
+            touch-action: manipulation; 
+        }
         .btn:active { background: var(--main-orange); color: #000; }
     </style>
 </head>
 <body onclick="nextScenario()">
 
 <header>
-    <div id="dive-id">DIVE_MODE: READY</div>
-    <div id="map-name" style="font-size: 0.7em; opacity: 0.7;">[SCANNING CORE DATA...]</div>
+    <div class="protocol-title">DREAMCATCHER PROTOCOL - INITIAL INQUIRY</div>
+    <div id="case-id" class="case-title">CASE: THE GUILT (죄책감)</div>
+    <div class="status-grid">
+        <div>SYNC: <span id="sync-val" class="stat-val">0.0%</span></div>
+        <div>CLEAN: <span id="clean-val" class="stat-val">100%</span></div>
+        <div>STRESS: <span id="stress-val" class="stat-val">0%</span></div>
+    </div>
 </header>
 
 <div id="log-section">
     </div>
 
-<div id="map-section" onclick="event.stopPropagation()">
-    <div id="map-grid"></div>
-    <div id="controls">
-        <div></div><div class="btn" onclick="move(0, -1)">▲</div><div></div>
-        <div class="btn" onclick="move(-1, 0)">◀</div><div class="btn" onclick="move(0, 1)">▼</div><div class="btn" onclick="move(1, 0)">▶</div>
+<div id="dive-console" onclick="event.stopPropagation()">
+    <div id="map-section">
+        <div id="map-grid"></div>
+    </div>
+    <div id="control-section">
+        <div id="controls">
+            <div></div><div class="btn" onclick="move(0, -1)">▲</div><div></div>
+            <div class="btn" onclick="move(-1, 0)">◀</div><div class="btn" onclick="move(0, 1)">▼</div><div class="btn" onclick="move(1, 0)">▶</div>
+        </div>
     </div>
 </div>
 
@@ -73,37 +135,37 @@
 
             const sceText = await resSce.text();
             scenarioData = sceText.split('\n').filter(r => r.trim()).map(r => r.split(',').map(c => c.trim()));
-           
+            
+            // 이미지 기반 헤더 정보 초기화
             const titleRow = scenarioData.find(r => r[0] === 'TITLE');
-            if(titleRow) document.getElementById('dive-id').innerText = titleRow[2];
+            if(titleRow) document.getElementById('case-id').innerText = titleRow[2];
 
             const mapText = await resMap.text();
             const mapRows = mapText.split('\n').filter(r => r.trim());
-            document.getElementById('map-name').innerText = `LOCATION: ${mapRows[0].split(',')[1]}`;
             mapData = mapRows.slice(1).map(r => r.split(',').map(c => c.trim()));
 
             renderMap();
-            addLog('system', '[SYSTEM] 데이터 인양 동기화 완료. 터치하여 진행하십시오.');
+            // 초기 시스템 로그 (이미지 스타일 적용됨)
+            addLog('system', '[PROTOCOL START] 무균실 진입 완료. 다이브 시스템을 가동합니다.');
         } catch (e) {
-            addLog('system', 'ERROR: 데이터 인양 실패. 파일명(소문자)과 경로를 확인하세요.');
+            addLog('system', 'ERROR: 데이터 인양 실패. 파일을 확인하세요.');
         }
     }
 
-    // 기존 호출부와 호환되는 중앙 로그 함수
+    // 기존 호출부와 호환 및 시각적 스타일링
     function addLog(type, text) {
         const logSec = document.getElementById('log-section');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-       
-        // 시스템 메시지는 즉시 출력, 일반 대사는 타자기 효과
-        if (type === 'system' || text.length < 5) {
+        
+        if (type === 'system') {
             div.innerHTML = text;
             logSec.appendChild(div);
             logSec.scrollTop = logSec.scrollHeight;
         } else {
             logSec.appendChild(div);
             lastTypingElement = div;
-            lastFullContent = text; // 스킵 대비용 저장
+            lastFullContent = text;
             runTypewriter(div, text);
         }
     }
@@ -112,11 +174,11 @@
         isTyping = true;
         let charIdx = 0;
         const logSec = document.getElementById('log-section');
-        container.innerHTML = "";
+        container.innerHTML = ""; 
 
         function type() {
             if (charIdx < text.length) {
-                // HTML 태그 처리 로직 (간단한 strong 대응)
+                // strong 태그 처리
                 if (text.substr(charIdx, 8) === "<strong>") {
                     const endTagIdx = text.indexOf("</strong>", charIdx) + 9;
                     container.innerHTML += text.substring(charIdx, endTagIdx);
@@ -154,6 +216,7 @@
             for (let x = 0; x < mapData[y].length; x++) {
                 const tile = document.createElement('div');
                 tile.id = `tile-${x}-${y}`;
+                // C(Core) 타일도 clue와 동일한 점멸 효과 적용
                 tile.className = 'tile ' + (mapData[y][x] === '0' ? 'wall' : mapData[y][x] === '1' ? 'path' : mapData[y][x] === 'E' ? 'clue' : mapData[y][x] === 'C' ? 'clue' : '');
                 if (mapData[y][x] === 'P') { tile.classList.add('player'); playerPos = { x, y }; }
                 grid.appendChild(tile);
@@ -168,12 +231,15 @@
         }
 
         const lines = scenarioData.filter(r => r[0] !== 'TITLE' && r[0] !== 'Type');
-        if (currentIdx >= lines.length) {
-            addLog('system', '[END] 시나리오의 끝입니다. 최종 자아를 인양하십시오.');
-            return;
-        }
+        if (currentIdx >= lines.length) return;
 
-        const [type, sender, content] = lines[currentIdx];
+        const [type, sender, content, sync, clean, stress] = lines[currentIdx];
+        
+        // 상단 상태 바 수치 실시간 업데이트
+        if (sync && sync !== '-') document.getElementById('sync-val').innerText = sync + '%';
+        if (clean && clean !== '-') document.getElementById('clean-val').innerText = clean + '%';
+        if (stress && stress !== '-') document.getElementById('stress-val').innerText = stress + '%';
+
         addLog(type, `<strong>${sender}:</strong> ${content}`);
         currentIdx++;
     }
@@ -184,15 +250,13 @@
             document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.remove('player');
             playerPos = { x: nx, y: ny };
             document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.add('player');
-           
-            // 이동 중 이벤트 발생 시에도 기존 addLog 호출
-            if (mapData[ny][nx] === 'E') addLog('system', '[DETECTED] 기억의 파편을 감지했습니다.');
-            if (mapData[ny][nx] === 'C') addLog('system', '[CRITICAL] 최종 자아 코어에 도달했습니다!');
+            
+            if (mapData[ny][nx] === 'E') addLog('system', '[DETECTED] 기억의 파편 감지.');
+            if (mapData[ny][nx] === 'C') addLog('system', '[CRITICAL] 코어 데이터 발견. 인양을 시작하십시오!');
         }
     }
 
     window.onload = init;
 </script>
 </body>
-</html>
 </html>
