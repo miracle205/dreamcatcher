@@ -38,20 +38,49 @@
 </div>
 
 <script>
-    let playerPos = { x: 1, y: 1 }, history = [{ x: 1, y: 1 }];
+    let playerPos = { x: 1, y: 1 }, history = [];
     let scenarioData = [], mapData = [];
 
     async function init() {
         try {
-            const v = Date.now();
-            const scRes = await fetch(`scenario.csv?v=${v}`);
+            const v = Date.now(); // 깃허브 캐시 방지
+            
+            // 1. 데이터 병렬 로드
+            const [scRes, mapRes] = await Promise.all([
+                fetch(`scenario.csv?v=${v}`),
+                fetch(`map.csv?v=${v}`)
+            ]);
+
+            if (!scRes.ok || !mapRes.ok) throw new Error("DATA_LOAD_ERROR");
+
             scenarioData = parseCSV(await scRes.text());
-            const mapRes = await fetch(`map.csv?v=${v}`);
-            mapData = (await mapRes.text()).split('\n').filter(l=>l&&!l.startsWith('#')).map(l=>l.split(','));
+            mapData = (await mapRes.text()).split('\n')
+                        .filter(l => l.trim() && !l.startsWith('#'))
+                        .map(l => l.split(','));
+
+            // 2. 시작 지점(S) 자동 스캔
+            let startFound = false;
+            mapData.forEach((row, y) => {
+                row.forEach((tile, x) => {
+                    if (tile.trim() === 'S') {
+                        playerPos = { x: x, y: y };
+                        history = [{ ...playerPos }];
+                        startFound = true;
+                    }
+                });
+            });
+
+            if (!startFound) {
+                console.warn("START_TOKEN 'S' NOT FOUND. DEFAULTING TO 1,1");
+                playerPos = { x: 1, y: 1 };
+                history = [{ ...playerPos }];
+            }
+
             updateState();
             requestAnimationFrame(renderLoop);
         } catch (e) {
-            addLog("SYSTEM_ERROR: SIGNAL LOST. CHECK GITHUB REPO.");
+            console.error(e);
+            addLog("CRITICAL_ERROR: SYSTEM RECOVERY FAILED. CHECK GITHUB REPO.");
         }
     }
 
@@ -60,14 +89,19 @@
         const headers = lines[0].split(',').map(h => h.trim());
         return lines.slice(1).map(line => {
             const v = line.split(',');
-            return headers.reduce((obj, h, i) => { obj[h] = v[i] ? v[i].replace(/"/g, '').trim() : ""; return obj; }, {});
+            return headers.reduce((obj, h, i) => { 
+                obj[h] = v[i] ? v[i].replace(/"/g, '').trim() : ""; 
+                return obj; 
+            }, {});
         });
     }
 
     function updateState() {
         const posStr = `${playerPos.x},${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr || row.Coord === `"${posStr}"`);
+        
         if (ev) {
+            // AreaID 기반으로 공간 설명 업데이트
             const area = scenarioData.find(row => row.AreaID === ev.AreaID && (!row.Coord || row.Coord === ""));
             if (area) { 
                 document.getElementById('area-name').innerText = area.AreaName; 
@@ -102,10 +136,18 @@
         const posStr = `${playerPos.x},${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr || row.Coord === `"${posStr}"`);
         if (!ev) return;
+
         if (num < 4 && ev.Feedback) addLog(ev.Feedback, true);
+
         const next = ev[`T${num}_Coord`];
-        if (num === 4 && !ev.Opt4) { if (history.length > 1) history.pop(); playerPos = history[history.length-1]; }
-        else if (next) { const [tx, ty] = next.split(',').map(Number); playerPos = {x:tx, y:ty}; history.push({...playerPos}); }
+        if (num === 4 && !ev.Opt4) { 
+            if (history.length > 1) history.pop(); 
+            playerPos = history[history.length-1]; 
+        } else if (next) { 
+            const [tx, ty] = next.split(',').map(Number);
+            playerPos = { x: tx, y: ty };
+            history.push({ ...playerPos });
+        }
         updateState();
     }
 
@@ -113,18 +155,41 @@
         const canvas = document.getElementById('minimap-canvas');
         const ctx = canvas.getContext('2d');
         const tileSize = 12; ctx.clearRect(0, 0, 140, 140);
+        
         mapData.forEach((row, y) => {
             row.forEach((tile, x) => {
                 tile = tile.trim();
-                ctx.fillStyle = tile==='1'?'#201000':tile==='P'?'#ff8c00':tile==='Q'?'#fff':tile==='G'?'#f00':'transparent';
+                // 색상 정의
+                ctx.fillStyle = (tile==='1'||tile==='S')?'#201000':
+                                tile==='P'?'#ff8c00':
+                                tile==='Q'?'#fff':
+                                tile==='G'?'#f00':
+                                tile==='N'?'#804600':'transparent';
+                
                 if(tile!=='0') ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2);
-                if(tile==='P') { ctx.globalAlpha = Math.sin(Date.now()/200)*0.5+0.5; ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2); ctx.globalAlpha = 1.0; }
+                
+                // 파편 깜빡임 효과
+                if(tile==='P') { 
+                    ctx.globalAlpha = Math.sin(Date.now()/200)*0.5+0.5; 
+                    ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2); 
+                    ctx.globalAlpha = 1.0; 
+                }
             });
         });
-        ctx.fillStyle = "#ff8c00"; ctx.shadowBlur = 10; ctx.shadowColor = "#ff8c00";
+
+        // 현재 플레이어 위치 (다이버)
+        ctx.fillStyle = "#ff8c00"; 
+        ctx.shadowBlur = 10; 
+        ctx.shadowColor = "#ff8c00";
         ctx.fillRect(playerPos.x*tileSize+12, playerPos.y*tileSize+12, 6, 6);
+        ctx.shadowBlur = 0;
     }
-    function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
+
+    function renderLoop() { 
+        drawMinimap(); 
+        requestAnimationFrame(renderLoop); 
+    }
+
     window.onload = init;
 </script>
 </body>
