@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v2.7.1</title>
+    <title>DREAMCATCHER v2.7.2</title>
     <style>
         :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; --green: #00ff00; --red: #ff0000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -21,24 +21,24 @@
         body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; }
 
         /* [TOP] Header Zone */
-        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.9em; flex-shrink: 0; }
+        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.85em; flex-shrink: 0; }
         
         /* [MIDDLE] Log Window Zone */
         #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         #log-container { flex: 1; padding: 20px; display: flex; flex-direction: column; }
         #log-content { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
         
-        /* 글자 크기 20% 증가 (기존 1.1em -> 1.3em) 및 중앙 정렬 */
+        /* 로그 텍스트: 이전 크기(1.1em)로 복구, 중앙 정렬 */
         .log-entry { 
-            margin-bottom: 15px; line-height: 1.5; 
-            border-left: 3px solid var(--amber-dim); padding: 0 15px; 
-            font-size: 1.3em; text-align: center; font-weight: bold;
+            margin-bottom: 12px; line-height: 1.5; 
+            border-left: 2px solid var(--amber-dim); padding: 0 15px; 
+            font-size: 1.1em; text-align: center;
         }
-        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 10px; font-size: 1em; text-align: center; }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 8px; font-size: 0.9em; text-align: center; }
 
-        /* [BOTTOM] Control Zone */
+        /* [BOTTOM] Control Zone (버튼 크기에 맞춰 높이 최적화) */
         #controls { 
-            height: 200px; /* 버튼 크기 증가에 따른 높이 확보 */
+            height: 210px; 
             border-top: 2px solid var(--amber); 
             background: #080808; 
             display: flex; flex-shrink: 0; z-index: 60;
@@ -52,23 +52,23 @@
 
         #button-slot {
             flex: 1; display: flex; flex-direction: column; 
-            gap: 8px; padding: 12px; overflow-y: auto;
+            gap: 6px; padding: 12px; overflow-y: auto;
         }
 
-        /* 버튼 크기 및 글자 크기 증가, 중앙 정렬 */
+        /* 버튼: 크기는 유지, 볼드체 제거, 중앙 정렬 */
         button { 
             background: none; border: 1px solid var(--amber-dim); color: var(--amber); 
-            padding: 12px; cursor: pointer; font-family: inherit; 
-            font-size: 1.05em; /* 약 20% 증가 */
-            text-align: center; transition: 0.1s; width: 100%; min-height: 45px;
-            font-weight: bold;
+            padding: 10px; cursor: pointer; font-family: inherit; 
+            font-size: 1.0em; 
+            text-align: center; transition: 0.1s; width: 100%; min-height: 42px;
+            font-weight: normal; /* 볼드체 제거 */
         }
         button:hover:not(:disabled) { background: var(--amber-dim); color: #fff; }
         button:disabled { border-color: #222; color: #222; opacity: 0.3; }
 
-        #opt4 { border-color: #503000; color: #a06000; margin-top: 5px; }
+        #opt4 { border-color: #402000; color: #805000; margin-top: 4px; }
 
-        .cursor { animation: blink 1s infinite; display: inline-block; width: 10px; height: 1.2em; background: var(--amber); vertical-align: middle; margin: 0 auto; }
+        .cursor { animation: blink 1s infinite; display: inline-block; width: 8px; height: 1em; background: var(--amber); vertical-align: middle; margin: 0 auto; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
@@ -161,7 +161,7 @@
         const logContainer = document.getElementById('log-container');
         const div = document.createElement('div');
         div.className = isFeedback ? 'feedback-entry' : 'log-entry';
-        div.innerText = text; // "> " 접두사 제거하여 중앙 정렬 시 깔끔하게 표시
+        div.innerText = text;
         logContent.appendChild(div);
 
         if (isFullLogMode) {
