@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v2.7.6</title>
+    <title>DREAMCATCHER v2.7.8</title>
     <style>
         :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; --green: #00ff00; --red: #ff0000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -35,41 +35,41 @@
         /* [MIDDLE] 메인 로그 출력 구역 */
         #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         #log-container { 
-            flex: 1; padding: 20px; display: flex; flex-direction: column; 
+            flex: 1; padding: 25px; display: flex; flex-direction: column; 
             overflow-y: auto; scroll-behavior: smooth;
         }
-        #log-content { flex: 1; display: flex; flex-direction: column; justify-content: center; } /* 중앙 정렬 */
+        #log-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         
-        .log-entry { margin-bottom: 15px; line-height: 1.6; font-size: 1.1em; text-align: center; }
-        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 10px; font-size: 0.9em; text-align: center; }
+        .log-entry { margin-bottom: 18px; line-height: 1.6; font-size: 1.1em; text-align: center; }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 12px; font-size: 0.9em; text-align: center; }
 
-        /* [BOTTOM] 컨트롤 센터 (미니맵 + 선택지) */
+        /* [BOTTOM] 컨트롤 센터 (높이를 240px로 확장하여 스크롤 해결) */
         #controls { 
-            height: 215px; border-top: 2px solid var(--amber); 
+            height: 240px; border-top: 2px solid var(--amber); 
             background: #080808; display: flex; flex-shrink: 0; z-index: 60;
         }
 
-        /* 하단 좌측: 미니맵 슬롯 */
+        /* 하단 좌측: 미니맵 전용 슬롯 */
         #minimap-slot {
-            width: 140px; display: flex; align-items: center; justify-content: center;
+            width: 150px; display: flex; align-items: center; justify-content: center;
             border-right: 1px solid var(--amber-dim); background: #000;
         }
-        #minimap-container { width: 120px; height: 120px; border: 1px solid #222; }
+        #minimap-container { width: 130px; height: 130px; border: 1px solid #222; }
 
         /* 하단 우측: 버튼 리스트 & 거리계 */
         #button-slot {
             flex: 1; display: flex; flex-direction: column; 
-            gap: 6px; padding: 12px; padding-top: 35px; /* DIST 표시용 공간 */
-            position: relative; overflow-y: auto;
+            gap: 7px; padding: 12px; padding-top: 40px; /* DIST 표시용 여백 */
+            position: relative; overflow: hidden; /* 버튼 스크롤 원천 차단 */
         }
 
         #distance-counter {
-            position: absolute; top: 10px; left: 15px;
-            font-size: 0.85em; color: var(--amber-dim);
+            position: absolute; top: 12px; left: 15px;
+            font-size: 0.9em; color: var(--amber-dim);
             letter-spacing: 1px; font-weight: bold;
         }
 
-        /* 버튼 스타일 최적화 (볼드 제거, 중앙 정렬, 크기 확장) */
+        /* 버튼 스타일 */
         button { 
             background: none; border: 1px solid var(--amber-dim); color: var(--amber); 
             padding: 10px; cursor: pointer; font-family: inherit; 
@@ -78,9 +78,7 @@
         }
         button:hover:not(:disabled) { background: var(--amber-dim); color: #fff; }
         button:disabled { border-color: #222; color: #222; opacity: 0.2; }
-
-        /* BACK 버튼 색상 차별화 */
-        #opt4 { border-color: #402000; color: #805000; }
+        #opt4 { border-color: #402000; color: #805000; margin-top: 4px; }
 
         /* 동적 인라인 커서 */
         .cursor { 
@@ -107,7 +105,7 @@
 <div id="controls">
     <div id="minimap-slot">
         <div id="minimap-container">
-            <canvas id="minimap-canvas" width="120" height="120"></canvas>
+            <canvas id="minimap-canvas" width="130" height="130"></canvas>
         </div>
     </div>
     <div id="button-slot">
@@ -124,19 +122,16 @@
     let scenarioData = [], mapData = [];
     let completedActions = {}, totalDistance = 0;
 
-    // 초기화 및 데이터 로드
     async function init() {
         try {
             const v = Date.now();
             const [scRes, mapRes] = await Promise.all([
-                fetch(`scenario.csv?v=${v}`),
-                fetch(`map.csv?v=${v}`)
+                fetch(`scenario.csv?v=${v}`), fetch(`map.csv?v=${v}`)
             ]);
             scenarioData = parseCSV(await scRes.text());
             const rawMap = await mapRes.text();
             mapData = rawMap.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
 
-            // 시작 위치(S) 찾기
             mapData.forEach((row, y) => { 
                 row.forEach((tile, x) => { 
                     if (tile === 'S') { playerPos = { x, y }; history = [{...playerPos}]; } 
@@ -145,16 +140,14 @@
 
             updateState();
             requestAnimationFrame(renderLoop);
-        } catch (e) { console.error("BOOT_SEQUENCE_ERROR:", e); }
+        } catch (e) { console.error("BOOT_ERROR:", e); }
     }
 
-    // 작가 친화적 RFC 4180 CSV 파서 (따옴표/쉼표 보호)
     function parseCSV(text) {
         const result = [];
         const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
         if (lines.length === 0) return [];
         const headers = lines[0].split(',').map(h => h.trim());
-
         for (let i = 1; i < lines.length; i++) {
             const row = {};
             const line = lines[i];
@@ -171,111 +164,78 @@
         return result;
     }
 
-    // 상태 업데이트 및 화면 출력
     function updateState() {
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr);
         if (ev) {
-            // 헤더 업데이트
             const area = scenarioData.find(row => row.AreaID === ev.AreaID && !row.Coord);
             if (area) { 
                 document.getElementById('area-name').innerText = area.AreaName; 
                 document.getElementById('area-desc').innerText = area.AreaDesc; 
             }
-            // 로그 출력 및 거리 갱신
             addLog(ev.Content);
             updateButtons(ev);
             document.getElementById('dist-val').innerText = String(totalDistance).padStart(3, '0');
         }
     }
 
-    // 로그 출력 및 커서 이동
     function addLog(text, isFeedback = false) {
         if(!text) return;
         const logContent = document.getElementById('log-content');
-        
-        // 기존 커서 제거
         const oldCursor = document.querySelector('.cursor');
         if (oldCursor) oldCursor.remove();
-
         const div = document.createElement('div');
         div.className = isFeedback ? 'feedback-entry' : 'log-entry';
         div.innerText = text;
-
-        // 새 커서 생성 및 문장 끝에 부착
         const cursor = document.createElement('span');
         cursor.className = 'cursor';
         div.appendChild(cursor);
-        
         logContent.appendChild(div);
-
-        // 자동 스크롤
-        const container = document.getElementById('log-container');
-        container.scrollTop = container.scrollHeight;
+        document.getElementById('log-container').scrollTop = document.getElementById('log-container').scrollHeight;
     }
 
-    // 4칸 체제 선택지 업데이트
     function updateButtons(ev) {
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const isCompleted = completedActions[posStr];
-
         for (let i = 1; i <= 3; i++) {
             const btn = document.getElementById(`opt${i}`);
-            const btnText = ev[`Opt${i}`];
-            const targetCoord = ev[`T${i}_Coord`];
-
-            if (btnText && btnText !== "") {
-                // 상호작용 완료 여부 체크
-                if (targetCoord === posStr && isCompleted) {
-                    btn.innerText = "[ COMPLETED ]";
-                    btn.disabled = true;
-                } else {
-                    btn.innerText = btnText;
-                    btn.disabled = false;
-                }
-            } else {
-                btn.innerText = "[ --- ]";
-                btn.disabled = true;
-            }
+            const text = ev[`Opt${i}`], target = ev[`T${i}_Coord`];
+            if (text && text !== "") {
+                if (target === posStr && isCompleted) { btn.innerText = "[ COMPLETED ]"; btn.disabled = true; }
+                else { btn.innerText = text; btn.disabled = false; }
+            } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
         }
-
-        // T4_Coord가 있으면 이동, 없으면 히스토리 기반 BACK
+        const last = history.length > 1 ? history[history.length-2] : null;
         const btn4 = document.getElementById('opt4');
         const t4Target = ev.T4_Coord;
-        if (t4Target || history.length > 1) {
+        if (t4Target || last) {
             btn4.innerText = ev.Opt4 || (t4Target ? `[ RETURN ]` : `[ BACK ]`);
             btn4.disabled = false;
         } else {
-            btn4.innerText = "[ START ]";
-            btn4.disabled = true;
+            btn4.innerText = "[ START ]"; btn4.disabled = true;
         }
     }
 
-    // 선택지 처리 (이동 및 트리 구조)
     function handleOption(num) {
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr);
         if (!ev && num !== 4) return;
-
         let nextCoord = ev[`T${num}_Coord`];
 
-        // 상호작용(제자리) 처리
         if (nextCoord === posStr) {
             completedActions[posStr] = true;
             if (ev.Feedback) addLog(ev.Feedback, true);
             updateButtons(ev);
             return;
         }
-
-        // 이동 처리
-        if (num === 4 && !nextCoord) { // 자동 BACK
+        if (num === 4 && !nextCoord) {
             if (history.length > 1) {
                 history.pop();
                 playerPos = {...history[history.length-1]};
                 totalDistance += 10;
                 updateState();
             }
-        } else if (nextCoord) { // 지정 이동 (T1~T4)
+        } else if (nextCoord) {
             const p = nextCoord.split('-');
             playerPos = { x: Number(p[0]), y: Number(p[1]) };
             history.push({...playerPos});
@@ -284,23 +244,19 @@
         }
     }
 
-    // 미니맵 렌더링 (3색 규격 적용)
     function drawMinimap() {
         const canvas = document.getElementById('minimap-canvas');
         const ctx = canvas.getContext('2d');
-        const ts = 6.5, off = 8;
-        ctx.clearRect(0, 0, 120, 120);
-        mapData.forEach((row, y) => {
-            row.forEach((tile, x) => {
-                let c = 'transparent';
-                if (tile === '1' || tile === 'S') c = '#221100'; // 길
-                else if (tile === 'P' || tile === 'N') c = 'var(--amber)'; // 데이터
-                else if (tile === 'Q') c = 'var(--green)'; // 탈출구
-                else if (tile === 'G') c = 'var(--red)'; // 가디언
-                if(tile !== '0') { ctx.fillStyle = c; ctx.fillRect(x*ts+off, y*ts+off, ts-1, ts-1); }
-            });
-        });
-        // 유저 위치 (화이트)
+        const ts = 7, off = 9;
+        ctx.clearRect(0, 0, 130, 130);
+        mapData.forEach((row, y) => { row.forEach((tile, x) => {
+            let c = 'transparent';
+            if (tile === '1' || tile === 'S') c = '#221100';
+            else if (tile === 'P' || tile === 'N') c = 'var(--amber)';
+            else if (tile === 'Q') c = 'var(--green)';
+            else if (tile === 'G') c = 'var(--red)';
+            if(tile !== '0') { ctx.fillStyle = c; ctx.fillRect(x*ts+off, y*ts+off, ts-1, ts-1); }
+        }); });
         ctx.fillStyle = "#fff"; ctx.shadowBlur = 4; ctx.shadowColor = "#fff";
         ctx.fillRect(playerPos.x*ts+off, playerPos.y*ts+off, ts-1, ts-1);
         ctx.shadowBlur = 0;
@@ -309,6 +265,5 @@
     function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
     window.onload = init;
 </script>
-
 </body>
 </html>
