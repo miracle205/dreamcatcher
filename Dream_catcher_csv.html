@@ -1,50 +1,260 @@
-/* 하단 컨트롤 영역 전체 */
-#controls { 
-    height: 180px; /* 세로 버튼 4개를 위해 높이 확장 */
-    border-top: 2px solid var(--amber); 
-    background: #050505; 
-    display: flex; /* 가로 분할을 위해 flex 사용 */
-    flex-shrink: 0;
-    z-index: 60;
-}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DREAMCATCHER v2.6.9</title>
+    <style>
+        :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; --green: #00ff00; --red: #ff0000; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { 
+            background: var(--bg); color: var(--amber); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; 
+        }
 
-/* 하부 왼쪽: 미니맵 칸 */
-#minimap-slot {
-    width: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-right: 1px solid var(--amber-dim);
-}
+        body { display: flex; flex-direction: column; height: 100dvh; text-transform: uppercase; }
 
-#minimap-container {
-    width: 120px; height: 120px;
-    border: 1px solid var(--amber-dim);
-    background: #000;
-    position: relative; /* absolute에서 변경 */
-    right: 0; bottom: 0; /* 기존 위치 초기화 */
-}
+        /* CRT Scanline Effect */
+        body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; }
 
-/* 하부 오른쪽: 세로 선택지 칸 */
-#button-slot {
-    flex: 1;
-    display: flex;
-    flex-direction: column; /* 세로로 쌓기 */
-    gap: 4px;
-    padding: 8px;
-    overflow-y: auto;
-}
+        /* [TOP] Header */
+        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.8em; flex-shrink: 0; }
+        
+        /* [MIDDLE] Log Window */
+        #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        #log-container { flex: 1; padding: 15px; display: flex; flex-direction: column; }
+        #log-content { flex: 1; }
+        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; font-size: 1em; }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.6; margin-bottom: 8px; font-size: 0.9em; }
 
-button { 
-    background: none; 
-    border: 1px solid var(--amber-dim); 
-    color: var(--amber); 
-    padding: 8px; 
-    cursor: pointer; 
-    font-family: inherit; 
-    font-size: 0.85em; 
-    text-align: left; /* 리스트 느낌을 위해 왼쪽 정렬 */
-    width: 100%; 
-    min-height: 35px;
-    flex-shrink: 0;
-}
+        /* [BOTTOM] Control Zone (Partitioned) */
+        #controls { 
+            height: 180px; 
+            border-top: 2px solid var(--amber); 
+            background: #080808; 
+            display: flex; 
+            flex-shrink: 0; 
+            z-index: 60;
+        }
+
+        /* Bottom Left: Minimap Slot */
+        #minimap-slot {
+            width: 140px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--amber-dim);
+            background: #000;
+        }
+        #minimap-container { width: 120px; height: 120px; border: 1px solid #222; }
+
+        /* Bottom Right: Button Slot (Vertical Stack) */
+        #button-slot {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        button { 
+            background: none; border: 1px solid var(--amber-dim); color: var(--amber); 
+            padding: 10px; cursor: pointer; font-family: inherit; font-size: 0.85em; 
+            text-align: left; transition: 0.1s; width: 100%; min-height: 38px;
+        }
+        button:hover:not(:disabled) { background: var(--amber-dim); color: #fff; }
+        button:disabled { border-color: #222; color: #222; opacity: 0.3; }
+
+        .cursor { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+<div id="header">
+    <div id="area-info">LOC: [<span id="area-name">INIT</span>]<br>STAT: <span id="area-desc">SCANNING</span></div>
+    <div style="text-align:right">SYNC: <span id="sync-val">100</span>%<br>STRS: <span id="stress-val">0</span></div>
+</div>
+
+<div id="main-container">
+    <div id="log-container">
+        <div id="log-content"></div>
+        <span class="cursor">█</span>
+    </div>
+</div>
+
+<div id="controls">
+    <div id="minimap-slot">
+        <div id="minimap-container">
+            <canvas id="minimap-canvas" width="120" height="120"></canvas>
+        </div>
+    </div>
+    <div id="button-slot">
+        <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
+        <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
+        <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
+        <button id="opt4" onclick="handleOption(4)">[ BACK ]</button>
+    </div>
+</div>
+
+<script>
+    let playerPos = { x: 0, y: 0 }, history = [];
+    let scenarioData = [], mapData = [];
+    let completedActions = {}; 
+    let isFullLogMode = false;
+
+    async function init() {
+        try {
+            const v = Date.now();
+            const [scRes, mapRes] = await Promise.all([
+                fetch(`scenario.csv?v=${v}`),
+                fetch(`map.csv?v=${v}`)
+            ]);
+            scenarioData = parseCSV(await scRes.text());
+            const rawMap = await mapRes.text();
+            mapData = rawMap.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
+
+            mapData.forEach((row, y) => { row.forEach((tile, x) => { if (tile === 'S') { playerPos = { x, y }; history = [{...playerPos}]; } }); });
+            updateState();
+            requestAnimationFrame(renderLoop);
+        } catch (e) { console.error("INIT_ERROR:", e); }
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+        const headers = lines[0].split(',').map(h => h.trim());
+        return lines.slice(1).map(line => {
+            const matches = [];
+            const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+            let match;
+            while ((match = regex.exec(line)) !== null) { matches.push(match[0].replace(/^"|"$/g, '').trim()); }
+            return headers.reduce((obj, h, i) => { obj[h] = matches[i] || ""; return obj; }, {});
+        });
+    }
+
+    function updateState() {
+        const posStr = `${playerPos.x}-${playerPos.y}`;
+        const ev = scenarioData.find(row => row.Coord === posStr);
+        if (ev) {
+            // Action에 따른 로그 모드 전환
+            if (ev.Action) {
+                if (ev.Action.includes("LOG_ALL")) isFullLogMode = true;
+                if (ev.Action.includes("LOG_5")) isFullLogMode = false;
+            }
+
+            const area = scenarioData.find(row => row.AreaID === ev.AreaID && !row.Coord);
+            if (area) { 
+                document.getElementById('area-name').innerText = area.AreaName; 
+                document.getElementById('area-desc').innerText = area.AreaDesc; 
+            }
+            addLog(ev.Content);
+            updateButtons(ev);
+        }
+    }
+
+    function addLog(text, isFeedback = false) {
+        if(!text) return;
+        const logContent = document.getElementById('log-content');
+        const logContainer = document.getElementById('log-container');
+        const div = document.createElement('div');
+        div.className = isFeedback ? 'feedback-entry' : 'log-entry';
+        div.innerText = `> ${text}`;
+        logContent.appendChild(div);
+
+        if (isFullLogMode) {
+            logContainer.style.overflowY = "auto";
+            logContainer.scrollTop = logContainer.scrollHeight;
+        } else {
+            logContainer.style.overflowY = "hidden";
+            while (logContent.childNodes.length > 5) { logContent.removeChild(logContent.firstChild); }
+        }
+    }
+
+    function updateButtons(ev) {
+        const posStr = `${playerPos.x}-${playerPos.y}`;
+        const isCompleted = completedActions[posStr];
+
+        for (let i = 1; i <= 3; i++) {
+            const btn = document.getElementById(`opt${i}`);
+            const text = ev[`Opt${i}`];
+            const target = ev[`T${i}_Coord`];
+
+            if (text) {
+                if (target === posStr && isCompleted) {
+                    btn.innerText = "[ COMPLETED ]";
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = text;
+                    btn.disabled = false;
+                }
+            } else {
+                btn.innerText = "[ --- ]";
+                btn.disabled = true;
+            }
+        }
+        const last = history.length > 1 ? history[history.length-2] : history[0];
+        document.getElementById('opt4').innerText = ev.Opt4 || `[ BACK: ${last.x}-${last.y} ]`;
+    }
+
+    function handleOption(num) {
+        const posStr = `${playerPos.x}-${playerPos.y}`;
+        const ev = scenarioData.find(row => row.Coord === posStr);
+        if (!ev && num !== 4) return;
+
+        let nextCoord = (num === 4) ? null : ev[`T${num}_Coord`];
+
+        if (nextCoord === posStr) {
+            completedActions[posStr] = true;
+            if (ev.Feedback) addLog(ev.Feedback, true);
+            updateState();
+            return;
+        }
+
+        if (num === 4) {
+            if (history.length > 1) {
+                history.pop();
+                playerPos = {...history[history.length-1]};
+                updateState();
+            }
+        } else if (nextCoord) { 
+            const parts = nextCoord.split('-');
+            playerPos = { x: Number(parts[0]), y: Number(parts[1]) };
+            history.push({...playerPos});
+            updateState();
+        }
+    }
+
+    function drawMinimap() {
+        const canvas = document.getElementById('minimap-canvas');
+        const ctx = canvas.getContext('2d');
+        const tileSize = 6.5; const offset = 8;
+        ctx.clearRect(0, 0, 120, 120);
+        mapData.forEach((row, y) => {
+            row.forEach((tile, x) => {
+                let color = 'transparent';
+                if (tile === '1' || tile === 'S') color = '#251500';
+                else if (tile === 'P' || tile === 'N') color = 'var(--amber)';
+                else if (tile === 'Q') color = 'var(--green)';
+                else if (tile === 'G') color = 'var(--red)';
+                
+                if(tile !== '0') {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x*tileSize+offset, y*tileSize+offset, tileSize-1, tileSize-1);
+                }
+            });
+        });
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowBlur = 5; ctx.shadowColor = "#ffffff";
+        ctx.fillRect(playerPos.x*tileSize+offset, playerPos.y*tileSize+offset, tileSize-1, tileSize-1);
+        ctx.shadowBlur = 0;
+    }
+
+    function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
+    window.onload = init;
+</script>
+</body>
+</html>
