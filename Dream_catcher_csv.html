@@ -2,29 +2,38 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>DIVE TERMINAL v2.6.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIVE TERMINAL v2.6.2</title>
     <style>
         :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; }
         body { background: var(--bg); color: var(--amber); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; text-transform: uppercase; }
+        /* CRT Scanline Effect */
         body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; z-index: 10; pointer-events: none; }
-        #header { border-bottom: 2px solid var(--amber); padding: 10px 20px; display: flex; justify-content: space-between; background: rgba(20, 10, 0, 0.5); }
+        
+        #header { border-bottom: 2px solid var(--amber); padding: 10px 20px; display: flex; justify-content: space-between; background: rgba(20, 10, 0, 0.5); z-index: 5; }
         #area-info { font-size: 0.85em; letter-spacing: 1px; }
-        #main-container { display: flex; flex: 1; position: relative; }
+        
+        #main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
         #log-container { flex: 1; padding: 20px; overflow-y: auto; border-right: 1px solid var(--amber-dim); }
-        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; }
-        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.8; margin-bottom: 5px; }
-        #minimap-container { width: 140px; height: 140px; border: 1px solid var(--amber-dim); margin: 15px; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.9); box-shadow: 0 0 10px var(--amber-dim); }
-        #controls { border-top: 2px solid var(--amber); padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #050505; }
-        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 12px; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.1s; font-size: 0.9em; }
+        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; animation: fadeIn 0.3s ease-out; }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.8; margin-bottom: 5px; font-size: 0.9em; }
+        
+        #minimap-container { width: 140px; height: 140px; border: 1px solid var(--amber-dim); margin: 15px; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.9); box-shadow: 0 0 10px var(--amber-dim); z-index: 5; }
+        
+        #controls { border-top: 2px solid var(--amber); padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #050505; z-index: 5; }
+        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 12px; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.1s; font-size: 0.9em; outline: none; }
         button:hover:not(:disabled) { background: var(--amber); color: var(--bg); box-shadow: 0 0 15px var(--amber); }
+        button:active { transform: scale(0.98); }
         button:disabled { border-color: #222; color: #222; cursor: default; }
+        
         .cursor { animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 <div id="header">
-    <div id="area-info">LOC: [<span id="area-name">INITIALIZING...</span>]<br>STAT: <span id="area-desc">CHECKING DATA PACKETS...</span></div>
+    <div id="area-info">LOC: [<span id="area-name">CONNECTING...</span>]<br>STAT: <span id="area-desc">SIGNAL SCANNING...</span></div>
     <div>SYNC: <span id="sync-val">100</span>% | STRESS: <span id="stress-val">0</span></div>
 </div>
 <div id="main-container">
@@ -44,20 +53,20 @@
 
     async function init() {
         try {
-            const v = Date.now();
+            const v = Date.now(); // Cache busting for GitHub Pages
             const [scRes, mapRes] = await Promise.all([
                 fetch(`scenario.csv?v=${v}`),
                 fetch(`map.csv?v=${v}`)
             ]);
 
-            if (!scRes.ok || !mapRes.ok) throw new Error("FILE_NOT_FOUND");
+            if (!scRes.ok || !mapRes.ok) throw new Error("LINK_ERROR");
 
             scenarioData = parseCSV(await scRes.text());
             mapData = (await mapRes.text()).split(/\r?\n/)
                         .filter(l => l.trim() && !l.startsWith('#'))
                         .map(l => l.split(',').map(cell => cell.trim()));
 
-            // 시작 지점(S) 스캔
+            // 1. Scan for Start Point 'S'
             let startFound = false;
             mapData.forEach((row, y) => {
                 row.forEach((tile, x) => {
@@ -70,7 +79,7 @@
             });
 
             if (!startFound) {
-                addLog("WARNING: START TOKEN 'S' NOT FOUND. ATTEMPTING 1,1", true);
+                addLog("SYSTEM: START TOKEN 'S' NOT FOUND. AUTO-DOCKING 1-1.", true);
                 playerPos = { x: 1, y: 1 };
                 history = [{ ...playerPos }];
             }
@@ -79,39 +88,43 @@
             requestAnimationFrame(renderLoop);
         } catch (e) {
             console.error(e);
-            addLog("CRITICAL ERROR: DATA LINK INTERRUPTED.", false);
+            addLog("CRITICAL: DATA LINK INTERRUPTED. CHECK CSV INTEGRITY.", false);
         }
     }
 
+    /**
+     * CSV Parser: Handles Excel's double-quoting for commas in cells
+     */
     function parseCSV(text) {
         const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
         const headers = lines[0].split(',').map(h => h.trim());
+        
         return lines.slice(1).map(line => {
-            const v = line.split(',');
+            const matches = [];
+            let match;
+            // Matches either unquoted text or text within quotes (handles commas inside quotes)
+            const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+            
+            while ((match = regex.exec(line)) !== null) {
+                matches.push(match[0].replace(/^"|"$/g, '').trim());
+            }
+
             return headers.reduce((obj, h, i) => { 
-                // 따옴표 및 불필요한 공백 제거
-                let val = v[i] ? v[i].replace(/['"]+/g, '').trim() : ""; 
-                obj[h] = val; 
+                obj[h] = matches[i] || ""; 
                 return obj; 
             }, {});
         });
     }
 
     function updateState() {
-        const px = playerPos.x;
-        const py = playerPos.y;
-        const posStr = `${px},${py}`;
-        
-        // 현재 위치 디버깅 정보 노출
+        // Dash-separated Coordinate Comparison (e.g., 1-1)
+        const posStr = `${playerPos.x}-${playerPos.y}`;
         document.getElementById('area-name').innerText = `POS: ${posStr}`;
 
-        // 시나리오 데이터 검색 (공백 무시 비교)
-        const ev = scenarioData.find(row => {
-            const csvCoord = row.Coord ? row.Coord.replace(/\s+/g, '') : "";
-            return csvCoord === posStr;
-        });
+        const ev = scenarioData.find(row => row.Coord === posStr);
         
         if (ev) {
+            // Update Area Information from Header Row (if exists)
             const area = scenarioData.find(row => row.AreaID === ev.AreaID && (!row.Coord || row.Coord === ""));
             if (area) { 
                 document.getElementById('area-name').innerText = area.AreaName; 
@@ -121,17 +134,21 @@
             updateButtons(ev);
         } else {
             addLog(`[SYSTEM] NO DATA AT ${posStr}. CHECK SCENARIO.CSV`, true);
-            updateButtons({}); // 버튼 초기화
+            updateButtons({});
         }
     }
 
     function addLog(text, isFeedback = false) {
+        if(!text) return;
         const log = document.getElementById('log-content');
         const div = document.createElement('div');
         div.className = isFeedback ? 'feedback-entry' : 'log-entry';
         div.innerText = isFeedback ? `>> ${text}` : `> ${text}`;
         log.appendChild(div);
-        document.getElementById('log-container').scrollTop = document.getElementById('log-container').scrollHeight;
+        
+        // Auto-scroll
+        const container = document.getElementById('log-container');
+        container.scrollTop = container.scrollHeight;
     }
 
     function updateButtons(ev) {
@@ -140,33 +157,36 @@
             btn.innerText = ev[`Opt${i}`] || "[ --- ]";
             btn.disabled = !ev[`Opt${i}`];
         }
+        
         const opt4 = document.getElementById('opt4');
         const last = history.length > 1 ? history[history.length-2] : history[0];
-        opt4.innerText = ev.Opt4 || `[ RETURN: ${last.x},${last.y} ]`;
+        // Custom Return Option or Default
+        opt4.innerText = ev.Opt4 || `[ RETURN: ${last.x}-${last.y} ]`;
         opt4.disabled = (history.length <= 1 && !ev.Opt4);
     }
 
     function handleOption(num) {
-        const px = playerPos.x;
-        const py = playerPos.y;
-        const posStr = `${px},${py}`;
-        const ev = scenarioData.find(row => row.Coord.replace(/\s+/g, '') === posStr);
+        const posStr = `${playerPos.x}-${playerPos.y}`;
+        const ev = scenarioData.find(row => row.Coord === posStr);
         
         if (!ev && num !== 4) return;
-
         if (num < 4 && ev && ev.Feedback) addLog(ev.Feedback, true);
 
         let nextCoord = ev ? ev[`T${num}_Coord`] : null;
 
         if (num === 4 && (!ev || !ev.Opt4)) { 
+            // Default Return Logic
             if (history.length > 1) {
                 history.pop(); 
                 playerPos = { ...history[history.length-1] };
             }
         } else if (nextCoord) { 
-            const [tx, ty] = nextCoord.split(',').map(cell => Number(cell.trim()));
-            playerPos = { x: tx, y: ty };
-            history.push({ ...playerPos });
+            // Parse Dash Coordinate
+            const parts = nextCoord.split('-');
+            if (parts.length === 2) {
+                playerPos = { x: Number(parts[0]), y: Number(parts[1]) };
+                history.push({ ...playerPos });
+            }
         }
         updateState();
     }
@@ -175,32 +195,49 @@
         const canvas = document.getElementById('minimap-canvas');
         if (!canvas || mapData.length === 0) return;
         const ctx = canvas.getContext('2d');
-        const tileSize = 12; ctx.clearRect(0, 0, 140, 140);
+        const tileSize = 8; // Smaller tiles for 16x16 map
+        const offset = 10;
+        
+        ctx.clearRect(0, 0, 140, 140);
         
         mapData.forEach((row, y) => {
             row.forEach((tile, x) => {
                 tile = tile ? tile.trim() : '0';
-                ctx.fillStyle = (tile==='1'||tile==='S')?'#201000':
-                                tile==='P'?'#ff8c00':
-                                tile==='Q'?'#fff':
-                                tile==='G'?'#f00':
-                                tile==='N'?'#804600':'transparent';
                 
-                if(tile!=='0') ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2);
-                if(tile==='P') { 
+                // Color Mapping
+                switch(tile) {
+                    case '1': case 'S': ctx.fillStyle = '#201000'; break;
+                    case 'P': ctx.fillStyle = '#ff8c00'; break;
+                    case 'Q': ctx.fillStyle = '#fff'; break;
+                    case 'G': ctx.fillStyle = '#f00'; break;
+                    case 'N': ctx.fillStyle = '#804600'; break;
+                    default: ctx.fillStyle = 'transparent';
+                }
+                
+                if(tile !== '0') ctx.fillRect(x*tileSize+offset, y*tileSize+offset, tileSize-1, tileSize-1);
+                
+                // Pulsing Piece (P)
+                if(tile === 'P') { 
                     ctx.globalAlpha = Math.sin(Date.now()/200)*0.5+0.5; 
-                    ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2); 
+                    ctx.fillRect(x*tileSize+offset, y*tileSize+offset, tileSize-1, tileSize-1); 
                     ctx.globalAlpha = 1.0; 
                 }
             });
         });
 
-        ctx.fillStyle = "#ff8c00"; ctx.shadowBlur = 10; ctx.shadowColor = "#ff8c00";
-        ctx.fillRect(playerPos.x*tileSize+12, playerPos.y*tileSize+12, 6, 6);
+        // Current Player Pos
+        ctx.fillStyle = "#ff8c00"; 
+        ctx.shadowBlur = 8; 
+        ctx.shadowColor = "#ff8c00";
+        ctx.fillRect(playerPos.x*tileSize+offset+1, playerPos.y*tileSize+offset+1, tileSize-3, tileSize-3);
         ctx.shadowBlur = 0;
     }
 
-    function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
+    function renderLoop() {
+        drawMinimap();
+        requestAnimationFrame(renderLoop);
+    }
+
     window.onload = init;
 </script>
 </body>
