@@ -3,35 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DIVE TERMINAL v2.6.3</title>
+    <title>DIVE TERMINAL v2.6.4</title>
     <style>
         :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; }
-        body { background: var(--bg); color: var(--amber); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; text-transform: uppercase; }
-        body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; z-index: 20; pointer-events: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        #header { border-bottom: 2px solid var(--amber); padding: 10px; display: flex; justify-content: space-between; background: rgba(20, 10, 0, 0.8); z-index: 10; font-size: 0.8em; }
-        
-        #main-container { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-        
-        /* 로그 영역: 미니맵에 가려지지 않도록 패딩 조절 */
-        #log-container { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 140px; }
-        .log-entry { margin-bottom: 12px; line-height: 1.4; border-left: 2px solid var(--amber-dim); padding-left: 10px; font-size: 1.1em; }
-        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 5px; font-size: 0.9em; }
+        html, body { 
+            background: var(--bg); color: var(--amber); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; 
+        }
 
-        /* 미니맵: 우측 하단 버튼 위쪽으로 배치 */
+        body { 
+            display: flex; flex-direction: column; 
+            height: 100dvh; /* 최신 모바일 브라우저 대응 높이 */
+            text-transform: uppercase; 
+        }
+
+        /* CRT Scanline */
+        body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; }
+
+        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.8em; flex-shrink: 0; }
+        
+        #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        
+        #log-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        #log-content { flex: 1; }
+        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; font-size: 1em; }
+        
+        /* 미니맵: 버튼 영역 바로 위에 고정 */
         #minimap-container { 
-            width: 110px; height: 110px; 
+            width: 100px; height: 100px; 
             border: 1px solid var(--amber-dim); 
             position: absolute; right: 10px; bottom: 10px; 
-            background: rgba(0,0,0,0.85); z-index: 15; 
-            pointer-events: none;
+            background: rgba(0,0,0,0.9); z-index: 40; 
         }
         
-        #controls { border-top: 2px solid var(--amber); padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #050505; z-index: 10; }
-        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 12px 5px; cursor: pointer; font-family: inherit; font-size: 0.8em; text-align: center; }
+        /* 컨트롤 영역: 하단에 딱 붙도록 강제 고정 */
+        #controls { 
+            border-top: 2px solid var(--amber); 
+            background: #0a0a0a; 
+            padding: 10px; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+            z-index: 60; 
+            flex-shrink: 0; /* 높이 줄어듦 방지 */
+            height: 140px; /* 고정 높이 */
+        }
+
+        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 12px 5px; cursor: pointer; font-family: inherit; font-size: 0.85em; transition: 0.1s; display: block; width: 100%; height: 55px; }
         button:hover:not(:disabled) { background: var(--amber); color: var(--bg); }
-        button:disabled { border-color: #222; color: #222; }
-        
+        button:disabled { border-color: #222; color: #222; opacity: 0.3; }
+
         .cursor { animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
@@ -42,14 +67,14 @@
     <div style="text-align:right">SYNC: <span id="sync-val">100</span>%<br>STRS: <span id="stress-val">0</span></div>
 </div>
 <div id="main-container">
-    <div id="log-container"><div id="log-content"></div><span class="cursor">█</span></div>
-    <div id="minimap-container"><canvas id="minimap-canvas" width="110" height="110"></canvas></div>
+    <div id="log-container"><div id="log-content"></div><span class="cursor" style="margin-bottom: 100px;">█</span></div>
+    <div id="minimap-container"><canvas id="minimap-canvas" width="100" height="100"></canvas></div>
 </div>
 <div id="controls">
     <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
     <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
     <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
-    <button id="opt4" onclick="handleOption(4)">[ RETURN ]</button>
+    <button id="opt4" onclick="handleOption(4)">[ BACK ]</button>
 </div>
 
 <script>
@@ -64,12 +89,13 @@
                 fetch(`map.csv?v=${v}`)
             ]);
             scenarioData = parseCSV(await scRes.text());
-            mapData = (await mapRes.text()).split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
+            const rawMap = await mapRes.text();
+            mapData = rawMap.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
 
             mapData.forEach((row, y) => { row.forEach((tile, x) => { if (tile === 'S') { playerPos = { x, y }; history = [{...playerPos}]; } }); });
             updateState();
             requestAnimationFrame(renderLoop);
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("INIT_ERROR:", e); }
     }
 
     function parseCSV(text) {
@@ -127,8 +153,8 @@
         let nextCoord = (num === 4) ? null : ev[`T${num}_Coord`];
         if (num === 4) { if (history.length > 1) { history.pop(); playerPos = {...history[history.length-1]}; } }
         else if (nextCoord) { 
-            const [tx, ty] = nextCoord.split('-').map(Number);
-            playerPos = { x: tx, y: ty };
+            const parts = nextCoord.split('-');
+            playerPos = { x: Number(parts[0]), y: Number(parts[1]) };
             history.push({...playerPos});
         }
         updateState();
@@ -136,9 +162,10 @@
 
     function drawMinimap() {
         const canvas = document.getElementById('minimap-canvas');
+        if(!canvas) return;
         const ctx = canvas.getContext('2d');
-        const tileSize = 6; const offset = 5;
-        ctx.clearRect(0, 0, 110, 110);
+        const tileSize = 5; const offset = 5;
+        ctx.clearRect(0, 0, 100, 100);
         mapData.forEach((row, y) => {
             row.forEach((tile, x) => {
                 ctx.fillStyle = (tile==='1'||tile==='S')?'#201000':tile==='P'?'#ff8c00':tile==='Q'?'#fff':tile==='G'?'#f00':tile==='N'?'#804600':'transparent';
