@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v2.6.9</title>
+    <title>DREAMCATCHER v2.7.1</title>
     <style>
         :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; --green: #00ff00; --red: #ff0000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -20,57 +20,55 @@
         /* CRT Scanline Effect */
         body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; }
 
-        /* [TOP] Header */
-        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.8em; flex-shrink: 0; }
+        /* [TOP] Header Zone */
+        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.9em; flex-shrink: 0; }
         
-        /* [MIDDLE] Log Window */
+        /* [MIDDLE] Log Window Zone */
         #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        #log-container { flex: 1; padding: 15px; display: flex; flex-direction: column; }
-        #log-content { flex: 1; }
-        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; font-size: 1em; }
-        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.6; margin-bottom: 8px; font-size: 0.9em; }
+        #log-container { flex: 1; padding: 20px; display: flex; flex-direction: column; }
+        #log-content { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
+        
+        /* 글자 크기 20% 증가 (기존 1.1em -> 1.3em) 및 중앙 정렬 */
+        .log-entry { 
+            margin-bottom: 15px; line-height: 1.5; 
+            border-left: 3px solid var(--amber-dim); padding: 0 15px; 
+            font-size: 1.3em; text-align: center; font-weight: bold;
+        }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 10px; font-size: 1em; text-align: center; }
 
-        /* [BOTTOM] Control Zone (Partitioned) */
+        /* [BOTTOM] Control Zone */
         #controls { 
-            height: 180px; 
+            height: 200px; /* 버튼 크기 증가에 따른 높이 확보 */
             border-top: 2px solid var(--amber); 
             background: #080808; 
-            display: flex; 
-            flex-shrink: 0; 
-            z-index: 60;
+            display: flex; flex-shrink: 0; z-index: 60;
         }
 
-        /* Bottom Left: Minimap Slot */
         #minimap-slot {
-            width: 140px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 1px solid var(--amber-dim);
-            background: #000;
+            width: 140px; display: flex; align-items: center; justify-content: center;
+            border-right: 1px solid var(--amber-dim); background: #000;
         }
         #minimap-container { width: 120px; height: 120px; border: 1px solid #222; }
 
-        /* Bottom Right: Button Slot (Vertical Stack) */
         #button-slot {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            padding: 10px;
-            overflow-y: auto;
+            flex: 1; display: flex; flex-direction: column; 
+            gap: 8px; padding: 12px; overflow-y: auto;
         }
 
+        /* 버튼 크기 및 글자 크기 증가, 중앙 정렬 */
         button { 
             background: none; border: 1px solid var(--amber-dim); color: var(--amber); 
-            padding: 10px; cursor: pointer; font-family: inherit; font-size: 0.85em; 
-            text-align: left; transition: 0.1s; width: 100%; min-height: 38px;
+            padding: 12px; cursor: pointer; font-family: inherit; 
+            font-size: 1.05em; /* 약 20% 증가 */
+            text-align: center; transition: 0.1s; width: 100%; min-height: 45px;
+            font-weight: bold;
         }
         button:hover:not(:disabled) { background: var(--amber-dim); color: #fff; }
         button:disabled { border-color: #222; color: #222; opacity: 0.3; }
 
-        .cursor { animation: blink 1s infinite; }
+        #opt4 { border-color: #503000; color: #a06000; margin-top: 5px; }
+
+        .cursor { animation: blink 1s infinite; display: inline-block; width: 10px; height: 1.2em; background: var(--amber); vertical-align: middle; margin: 0 auto; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
@@ -83,7 +81,7 @@
 <div id="main-container">
     <div id="log-container">
         <div id="log-content"></div>
-        <span class="cursor">█</span>
+        <div style="text-align: center; margin-top: 10px;"><span class="cursor"></span></div>
     </div>
 </div>
 
@@ -136,16 +134,17 @@
         });
     }
 
-    function updateState() {
+    function updateState(isNewMove = true) {
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr);
         if (ev) {
-            // Action에 따른 로그 모드 전환
             if (ev.Action) {
                 if (ev.Action.includes("LOG_ALL")) isFullLogMode = true;
                 if (ev.Action.includes("LOG_5")) isFullLogMode = false;
             }
-
+            if (!isFullLogMode && isNewMove) {
+                document.getElementById('log-content').innerHTML = "";
+            }
             const area = scenarioData.find(row => row.AreaID === ev.AreaID && !row.Coord);
             if (area) { 
                 document.getElementById('area-name').innerText = area.AreaName; 
@@ -162,7 +161,7 @@
         const logContainer = document.getElementById('log-container');
         const div = document.createElement('div');
         div.className = isFeedback ? 'feedback-entry' : 'log-entry';
-        div.innerText = `> ${text}`;
+        div.innerText = text; // "> " 접두사 제거하여 중앙 정렬 시 깔끔하게 표시
         logContent.appendChild(div);
 
         if (isFullLogMode) {
@@ -204,13 +203,12 @@
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr);
         if (!ev && num !== 4) return;
-
         let nextCoord = (num === 4) ? null : ev[`T${num}_Coord`];
 
         if (nextCoord === posStr) {
             completedActions[posStr] = true;
             if (ev.Feedback) addLog(ev.Feedback, true);
-            updateState();
+            updateState(false);
             return;
         }
 
@@ -218,13 +216,13 @@
             if (history.length > 1) {
                 history.pop();
                 playerPos = {...history[history.length-1]};
-                updateState();
+                updateState(true);
             }
         } else if (nextCoord) { 
             const parts = nextCoord.split('-');
             playerPos = { x: Number(parts[0]), y: Number(parts[1]) };
             history.push({...playerPos});
-            updateState();
+            updateState(true);
         }
     }
 
@@ -236,19 +234,15 @@
         mapData.forEach((row, y) => {
             row.forEach((tile, x) => {
                 let color = 'transparent';
-                if (tile === '1' || tile === 'S') color = '#251500';
+                if (tile === '1' || tile === 'S') color = '#221100';
                 else if (tile === 'P' || tile === 'N') color = 'var(--amber)';
                 else if (tile === 'Q') color = 'var(--green)';
                 else if (tile === 'G') color = 'var(--red)';
-                
-                if(tile !== '0') {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x*tileSize+offset, y*tileSize+offset, tileSize-1, tileSize-1);
-                }
+                if(tile !== '0') { ctx.fillStyle = color; ctx.fillRect(x*tileSize+offset, y*tileSize+offset, tileSize-1, tileSize-1); }
             });
         });
         ctx.fillStyle = "#ffffff";
-        ctx.shadowBlur = 5; ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 4; ctx.shadowColor = "#ffffff";
         ctx.fillRect(playerPos.x*tileSize+offset, playerPos.y*tileSize+offset, tileSize-1, tileSize-1);
         ctx.shadowBlur = 0;
     }
