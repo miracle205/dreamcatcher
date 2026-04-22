@@ -2,265 +2,129 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER STATION - DIVE MODE v1.8</title>
+    <title>DIVE TERMINAL v2.6</title>
     <style>
-        :root { 
-            --main-orange: #FF8C00; 
-            --bg-black: #000000; 
-            --tile-size: 13px; 
-            --font-main: 'Courier New', monospace;
-        }
-        
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        
-        body { 
-            font-family: var(--font-main); 
-            background: var(--bg-black); 
-            color: var(--main-orange); 
-            margin: 0; padding: 0; 
-            display: flex; flex-direction: column; 
-            height: 100dvh; overflow: hidden; 
-            touch-action: none;
-            border: 2px solid var(--main-orange); 
-        }
-
-        /* --- 상단 상태 바 (이미지 기반 슬림 최적화) --- */
-        header { 
-            padding: 8px 15px; /* 수직 여백 최소화 */
-            border-bottom: 1px solid var(--main-orange); 
-            background: #000; flex-shrink: 0;
-            text-align: center;
-        }
-        .protocol-title { 
-            font-size: 0.55em; 
-            opacity: 0.6; 
-            letter-spacing: 1.5px; 
-            margin-bottom: 4px; 
-        }
-        .case-title { 
-            font-size: 1.0em; 
-            font-weight: 900; 
-            color: #fff; 
-            text-shadow: 0 0 3px var(--main-orange); 
-            margin-bottom: 8px; 
-            letter-spacing: 0.5px;
-        }
-        .status-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            font-size: 0.65em; 
-            border-top: 1px solid #221100; 
-            padding-top: 6px;
-            gap: 5px;
-        }
-        .stat-val { color: #fff; font-weight: bold; margin-left: 2px; }
-
-        /* --- 로그 섹션 (이미지 말풍선 스타일) --- */
-        #log-section { 
-            flex: 1; overflow-y: auto; padding: 15px; 
-            background: rgba(5,5,5,0.98); 
-            border-bottom: 1px solid var(--main-orange);
-            -webkit-overflow-scrolling: touch;
-        }
-        .msg { margin-bottom: 12px; font-size: 0.82em; line-height: 1.4; padding: 8px; word-break: break-all; }
-        
-        /* 시스템 메시지 스타일 */
-        .msg.system { border: 1px dashed var(--main-orange); color: #888; text-align: center; background: #000; margin: 10px 0; }
-        
-        /* 캐릭터 대사 스타일 */
-        .msg.me, .msg.subject { background: #220000; color: #fff; border: 1px solid #441111; border-radius: 2px; }
-        .msg strong { color: var(--main-orange); font-size: 0.9em; }
-
-        /* --- 하단 다이브 콘솔 (맵 & 조작부) --- */
-        #dive-console { 
-            height: 230px; /* 조작 편의성을 위해 높이 최적화 */
-            display: flex; border-top: 1px solid var(--main-orange);
-            background: #050505; flex-shrink: 0;
-        }
-
-        #map-section { 
-            flex: 6; display: flex; justify-content: center; align-items: center; 
-            border-right: 1px solid var(--main-orange); position: relative; overflow: hidden;
-            background: #000;
-        }
-        #map-grid { display: grid; border: 1px solid #331a00; padding: 1px; background: #0a0a0a; }
-        .tile { width: var(--tile-size); height: var(--tile-size); border: 0.1px solid #1a0d00; }
-        .tile.wall { background: #111; }
-        .tile.path { background: #1a0f00; }
-        .tile.player { background: #fff; box-shadow: 0 0 8px #fff; border-radius: 50%; z-index: 5; position: relative; }
-        .tile.clue { background: var(--main-orange); animation: blink 1.2s infinite; }
-        @keyframes blink { 50% { opacity: 0.2; } }
-
-        #control-section { flex: 4; display: flex; justify-content: center; align-items: center; background: #080808; }
-        #controls { display: grid; grid-template-columns: repeat(3, 48px); gap: 6px; }
-        .btn { 
-            width: 48px; height: 48px; 
-            background: rgba(255,140,0,0.05); 
-            border: 1px solid var(--main-orange); 
-            color: var(--main-orange); 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; border-radius: 4px; font-size: 1.1em; 
-            touch-action: manipulation; 
-        }
-        .btn:active { background: var(--main-orange); color: #000; }
+        :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; }
+        body { background: var(--bg); color: var(--amber); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; text-transform: uppercase; }
+        body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; z-index: 10; pointer-events: none; }
+        #header { border-bottom: 2px solid var(--amber); padding: 10px 20px; display: flex; justify-content: space-between; background: rgba(20, 10, 0, 0.5); }
+        #main-container { display: flex; flex: 1; position: relative; }
+        #log-container { flex: 1; padding: 20px; overflow-y: auto; border-right: 1px solid var(--amber-dim); }
+        .log-entry { margin-bottom: 12px; line-height: 1.5; border-left: 2px solid var(--amber-dim); padding-left: 10px; }
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.8; margin-bottom: 5px; }
+        #minimap-container { width: 140px; height: 140px; border: 1px solid var(--amber-dim); margin: 15px; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.9); box-shadow: 0 0 10px var(--amber-dim); }
+        #controls { border-top: 2px solid var(--amber); padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #050505; }
+        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 12px; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.1s; font-size: 0.9em; }
+        button:hover:not(:disabled) { background: var(--amber); color: var(--bg); box-shadow: 0 0 15px var(--amber); }
+        button:disabled { border-color: #222; color: #222; cursor: default; }
+        .cursor { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
-<body onclick="nextScenario()">
-
-<header>
-    <div class="protocol-title">DREAMCATCHER PROTOCOL - DIVE STATION</div>
-    <div id="case-id" class="case-title">CASE: LOADING...</div>
-    <div class="status-grid">
-        <div>SYNC: <span id="sync-val" class="stat-val">0.0%</span></div>
-        <div>CLEAN: <span id="clean-val" class="stat-val">100%</span></div>
-        <div>STRESS: <span id="stress-val" class="stat-val">0%</span></div>
-    </div>
-</header>
-
-<div id="log-section">
-    </div>
-
-<div id="dive-console" onclick="event.stopPropagation()">
-    <div id="map-section">
-        <div id="map-grid"></div>
-    </div>
-    <div id="control-section">
-        <div id="controls">
-            <div></div><div class="btn" onclick="move(0, -1)">▲</div><div></div>
-            <div class="btn" onclick="move(-1, 0)">◀</div><div class="btn" onclick="move(0, 1)">▼</div><div class="btn" onclick="move(1, 0)">▶</div>
-        </div>
-    </div>
+<body>
+<div id="header">
+    <div id="area-info">LOC: [<span id="area-name">...</span>]<br>STAT: <span id="area-desc">...</span></div>
+    <div>SYNC: <span id="sync-val">100</span>% | STRESS: <span id="stress-val">0</span></div>
+</div>
+<div id="main-container">
+    <div id="log-container"><div id="log-content"></div><span class="cursor">█</span></div>
+    <div id="minimap-container"><canvas id="minimap-canvas" width="140" height="140"></canvas></div>
+</div>
+<div id="controls">
+    <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
+    <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
+    <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
+    <button id="opt4" onclick="handleOption(4)">[ RETURN ]</button>
 </div>
 
 <script>
-    let scenarioData = [];
-    let mapData = [];
-    let currentIdx = 0;
-    let playerPos = { x: 0, y: 0 };
-    let isTyping = false;
-    let typingTimer;
-    let lastTypingElement;
-    let lastFullContent = "";
+    let playerPos = { x: 1, y: 1 }, history = [{ x: 1, y: 1 }];
+    let scenarioData = [], mapData = [];
 
     async function init() {
         try {
-            const [resSce, resMap] = await Promise.all([
-                fetch('./scenario.csv'),
-                fetch('./map.csv')
-            ]);
-
-            const sceText = await resSce.text();
-            scenarioData = sceText.split('\n').filter(r => r.trim()).map(r => r.split(',').map(c => c.trim()));
-            
-            const titleRow = scenarioData.find(r => r[0] === 'TITLE');
-            if(titleRow) document.getElementById('case-id').innerText = titleRow[2];
-
-            const mapText = await resMap.text();
-            const mapRows = mapText.split('\n').filter(r => r.trim());
-            mapData = mapRows.slice(1).map(r => r.split(',').map(c => c.trim()));
-
-            renderMap();
-            addLog('system', '[SYSTEM] 무균실 동기화 완료. 다이빙을 시작합니다.');
+            const v = Date.now();
+            const scRes = await fetch(`scenario.csv?v=${v}`);
+            scenarioData = parseCSV(await scRes.text());
+            const mapRes = await fetch(`map.csv?v=${v}`);
+            mapData = (await mapRes.text()).split('\n').filter(l=>l&&!l.startsWith('#')).map(l=>l.split(','));
+            updateState();
+            requestAnimationFrame(renderLoop);
         } catch (e) {
-            addLog('system', 'ERROR: 데이터 연결 실패. CSV 파일명을 확인하세요.');
+            addLog("SYSTEM_ERROR: SIGNAL LOST. CHECK GITHUB REPO.");
         }
     }
 
-    function addLog(type, text) {
-        const logSec = document.getElementById('log-section');
+    function parseCSV(text) {
+        const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+        const headers = lines[0].split(',').map(h => h.trim());
+        return lines.slice(1).map(line => {
+            const v = line.split(',');
+            return headers.reduce((obj, h, i) => { obj[h] = v[i] ? v[i].replace(/"/g, '').trim() : ""; return obj; }, {});
+        });
+    }
+
+    function updateState() {
+        const posStr = `${playerPos.x},${playerPos.y}`;
+        const ev = scenarioData.find(row => row.Coord === posStr || row.Coord === `"${posStr}"`);
+        if (ev) {
+            const area = scenarioData.find(row => row.AreaID === ev.AreaID && (!row.Coord || row.Coord === ""));
+            if (area) { 
+                document.getElementById('area-name').innerText = area.AreaName; 
+                document.getElementById('area-desc').innerText = area.AreaDesc; 
+            }
+            addLog(ev.Content);
+            updateButtons(ev);
+        }
+    }
+
+    function addLog(text, isFeedback = false) {
+        const log = document.getElementById('log-content');
         const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        
-        if (type === 'system') {
-            div.innerHTML = text;
-            logSec.appendChild(div);
-            logSec.scrollTop = logSec.scrollHeight;
-        } else {
-            logSec.appendChild(div);
-            lastTypingElement = div;
-            lastFullContent = text;
-            runTypewriter(div, text);
+        div.className = isFeedback ? 'feedback-entry' : 'log-entry';
+        div.innerText = isFeedback ? `>> ${text}` : `> ${text}`;
+        log.appendChild(div);
+        document.getElementById('log-container').scrollTop = document.getElementById('log-container').scrollHeight;
+    }
+
+    function updateButtons(ev) {
+        for (let i = 1; i <= 3; i++) {
+            const btn = document.getElementById(`opt${i}`);
+            btn.innerText = ev[`Opt${i}`] || "[ --- ]";
+            btn.disabled = !ev[`Opt${i}`];
         }
+        const opt4 = document.getElementById('opt4');
+        const last = history.length > 1 ? history[history.length-2] : history[0];
+        opt4.innerText = ev.Opt4 || `[ RETURN: ${last.x},${last.y} ]`;
     }
 
-    function runTypewriter(container, text) {
-        isTyping = true;
-        let charIdx = 0;
-        const logSec = document.getElementById('log-section');
-        container.innerHTML = ""; 
-
-        function type() {
-            if (charIdx < text.length) {
-                if (text.substr(charIdx, 8) === "<strong>") {
-                    const endTagIdx = text.indexOf("</strong>", charIdx) + 9;
-                    container.innerHTML += text.substring(charIdx, endTagIdx);
-                    charIdx = endTagIdx;
-                } else {
-                    container.innerHTML += text.charAt(charIdx);
-                    charIdx++;
-                }
-                logSec.scrollTop = logSec.scrollHeight;
-                typingTimer = setTimeout(type, 25); // 타자기 속도 소폭 상향
-            } else {
-                isTyping = false;
-            }
-        }
-        type();
+    function handleOption(num) {
+        const posStr = `${playerPos.x},${playerPos.y}`;
+        const ev = scenarioData.find(row => row.Coord === posStr || row.Coord === `"${posStr}"`);
+        if (!ev) return;
+        if (num < 4 && ev.Feedback) addLog(ev.Feedback, true);
+        const next = ev[`T${num}_Coord`];
+        if (num === 4 && !ev.Opt4) { if (history.length > 1) history.pop(); playerPos = history[history.length-1]; }
+        else if (next) { const [tx, ty] = next.split(',').map(Number); playerPos = {x:tx, y:ty}; history.push({...playerPos}); }
+        updateState();
     }
 
-    function completeImmediately() {
-        clearTimeout(typingTimer);
-        if (lastTypingElement) lastTypingElement.innerHTML = lastFullContent;
-        isTyping = false;
-        document.getElementById('log-section').scrollTop = document.getElementById('log-section').scrollHeight;
+    function drawMinimap() {
+        const canvas = document.getElementById('minimap-canvas');
+        const ctx = canvas.getContext('2d');
+        const tileSize = 12; ctx.clearRect(0, 0, 140, 140);
+        mapData.forEach((row, y) => {
+            row.forEach((tile, x) => {
+                tile = tile.trim();
+                ctx.fillStyle = tile==='1'?'#201000':tile==='P'?'#ff8c00':tile==='Q'?'#fff':tile==='G'?'#f00':'transparent';
+                if(tile!=='0') ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2);
+                if(tile==='P') { ctx.globalAlpha = Math.sin(Date.now()/200)*0.5+0.5; ctx.fillRect(x*tileSize+10, y*tileSize+10, tileSize-2, tileSize-2); ctx.globalAlpha = 1.0; }
+            });
+        });
+        ctx.fillStyle = "#ff8c00"; ctx.shadowBlur = 10; ctx.shadowColor = "#ff8c00";
+        ctx.fillRect(playerPos.x*tileSize+12, playerPos.y*tileSize+12, 6, 6);
     }
-
-    function renderMap() {
-        const grid = document.getElementById('map-grid');
-        if (!mapData.length) return;
-        grid.style.gridTemplateColumns = `repeat(${mapData[0].length}, var(--tile-size))`;
-        grid.innerHTML = '';
-
-        for (let y = 0; y < mapData.length; y++) {
-            for (let x = 0; x < mapData[y].length; x++) {
-                const tile = document.createElement('div');
-                tile.id = `tile-${x}-${y}`;
-                tile.className = 'tile ' + (mapData[y][x] === '0' ? 'wall' : mapData[y][x] === '1' ? 'path' : mapData[y][x] === 'E' || mapData[y][x] === 'C' ? 'clue' : '');
-                if (mapData[y][x] === 'P') { tile.classList.add('player'); playerPos = { x, y }; }
-                grid.appendChild(tile);
-            }
-        }
-    }
-
-    function nextScenario() {
-        if (isTyping) { completeImmediately(); return; }
-
-        const lines = scenarioData.filter(r => r[0] !== 'TITLE' && r[0] !== 'Type');
-        if (currentIdx >= lines.length) return;
-
-        const [type, sender, content, sync, clean, stress] = lines[currentIdx];
-        
-        if (sync && sync !== '-') document.getElementById('sync-val').innerText = sync + '%';
-        if (clean && clean !== '-') document.getElementById('clean-val').innerText = clean + '%';
-        if (stress && stress !== '-') document.getElementById('stress-val').innerText = stress + '%';
-
-        addLog(type, `<strong>${sender}:</strong> ${content}`);
-        currentIdx++;
-    }
-
-    function move(dx, dy) {
-        const nx = playerPos.x + dx, ny = playerPos.y + dy;
-        if (ny >= 0 && ny < mapData.length && nx >= 0 && nx < mapData[0].length && mapData[ny][nx] !== '0') {
-            document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.remove('player');
-            playerPos = { x: nx, y: ny };
-            document.getElementById(`tile-${playerPos.x}-${playerPos.y}`).classList.add('player');
-            
-            if (mapData[ny][nx] === 'E') addLog('system', '[DETECTED] 기억의 파편을 인양했습니다.');
-            if (mapData[ny][nx] === 'C') addLog('system', '[CRITICAL] 코어 데이터 전송 시작!');
-        }
-    }
-
+    function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
     window.onload = init;
 </script>
 </body>
