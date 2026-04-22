@@ -1,13 +1,9 @@
-Type,Sender,Content,Sync,Clean,Stress
-TITLE,-,DIVE #01: 태초의 숨결,-,-,-
-system,SYSTEM,[LOG] 신경 인터페이스 동기화 시작. 18.5도 유지.,80,100,0
-me,리트리버,지령실. 표층 진입했다,85,100,2
-subject,지령실,리트리버- 싱크퍼센트 이상없다. 진행해라.,85,100,5
-me,리트리버,리미널 공간이군..,85,100,8
-system,SYSTEM,[NOTICE] 코어층 데이터 산란 감지. 인양 포인트 탐색 중.,20,98,12
-me,리트리버,하얀색 벽이 끝도없이 이어져있어.,84,95,20
-subject,지령실,이론상으로만 예측했는데 실제라니 의외로군..,85,85,35
-system,SYSTEM,[WARNING] 가디언 프로토콜 활성화. 동기화율 유지에 집중하십시오.,85,70,50
-me,리트리버,꺾인벽이 보인다.,70,60,60
-subject,지령실,꺾인부분에 도착하면 보고해라.,85,85,35
-me,리트리버,알겠다.30초면 도착한다.,70,60,60
+# [DIVE ENGINE v2.6 SCENARIO GUIDE]
+# AreaID: 플로어 ID | Coord: 좌표(X,Y) | AreaName: 공간명 | AreaDesc: 상단설명
+# Content: 중앙로그 | Opt1~4: 선택지 | T1~4_Coord: 이동좌표 | Feedback: 시스템로그 | Action: 연출명령
+AreaID,Coord,AreaName,AreaDesc,Content,Opt1,T1_Coord,Opt2,T2_Coord,Opt3,T3_Coord,Opt4,Feedback,Action
+START,,진입 구역,데이터 노이즈가 휘몰아치는 입구입니다.,,,,,,,,,
+START,"1,1",,,눈앞에 거대한 아카이브의 문이 보입니다.,> [ENTER] 게이트 개방,2,1,> [SCAN] 주변 조사,1,1,,,보안 프로토콜을 우회합니다.,SYNC+5
+DARK_HALL,,어두운 복도,광학 센서가 작동하지 않는 칠흑 같은 공간입니다.,,,,,,,,,
+DARK_HALL,"2,1",,,복도 저편에서 희미한 노이즈가 들려옵니다.,> [MOVE] 노이즈 방향,4,1,> [MOVE] 오른쪽 벽면,2,2,,,발소리를 죽여 이동합니다.,STRESS+5
+DARK_HALL,"4,1",,,정체불명의 '대상'이 서 있습니다.,* [TALK] 누구냐?,4,1,> [RUN] 즉시 이탈,1,1,,,대상은 대답 없이 당신을 응시합니다.,STRESS+20
