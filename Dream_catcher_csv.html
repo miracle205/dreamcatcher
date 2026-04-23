@@ -3,39 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v2.7.9</title>
+    <title>DREAMCATCHER v2.8.1</title>
     <style>
-        :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; }
+        :root { --amber: #ff8c00; --amber-dim: #804600; --bg: #000; --green: #00ff00; --red: #ff0000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { background: var(--bg); color: var(--amber); font-family: 'Courier New', monospace; margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        
+        html, body { 
+            background: var(--bg); color: var(--amber); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; 
+        }
+
         body { display: flex; flex-direction: column; height: 100dvh; text-transform: uppercase; }
-        body::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; }
-        #header { border-bottom: 2px solid var(--amber); padding: 8px 12px; background: rgba(10, 5, 0, 0.9); z-index: 50; display: flex; justify-content: space-between; font-size: 0.85em; flex-shrink: 0; }
+
+        /* CRT Scanline Effect */
+        body::before { 
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; 
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); 
+            background-size: 100% 4px, 3px 100%; z-index: 100; pointer-events: none; 
+        }
+
+        /* [TOP] Header */
+        #header { 
+            border-bottom: 2px solid var(--amber); padding: 8px 12px; 
+            background: rgba(10, 5, 0, 0.9); z-index: 50; 
+            display: flex; justify-content: space-between; font-size: 0.85em; flex-shrink: 0; 
+        }
+        
+        /* [MIDDLE] Log Window (Scroll Fixed) */
         #main-container { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        #log-container { flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto; }
-        #log-content { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 200px; }
-        .log-entry { margin-bottom: 18px; line-height: 1.6; font-size: 1.1em; text-align: center; }
-        #controls { height: 240px; border-top: 2px solid var(--amber); background: #080808; display: flex; flex-shrink: 0; z-index: 60; }
-        #minimap-slot { width: 150px; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--amber-dim); }
+        #log-container { 
+            flex: 1; padding: 25px; display: flex; flex-direction: column; 
+            overflow-y: auto; scroll-behavior: smooth;
+            padding-bottom: 60px; /* 하단 여백 확보 */
+        }
+        #log-content { 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100%; width: 100%;
+        }
+        
+        .log-entry { 
+            margin-bottom: 24px; line-height: 1.7; font-size: 1.15em; text-align: center; 
+            max-width: 85%; word-break: keep-all; overflow-wrap: break-word; white-space: pre-wrap;
+        }
+        /* 로그가 적을 때 중앙 정렬 유지를 위한 마진 로직 */
+        .log-entry:first-child { margin-top: auto; }
+        .log-entry:last-child { margin-bottom: auto; }
+
+        .feedback-entry { color: var(--amber); font-style: italic; opacity: 0.7; margin-bottom: 15px; font-size: 0.95em; text-align: center; max-width: 80%; }
+
+        /* [BOTTOM] Control Center (Height: 240px) */
+        #controls { 
+            height: 240px; border-top: 2px solid var(--amber); 
+            background: #080808; display: flex; flex-shrink: 0; z-index: 60;
+        }
+
+        #minimap-slot {
+            width: 150px; display: flex; align-items: center; justify-content: center;
+            border-right: 1px solid var(--amber-dim); background: #000;
+        }
         #minimap-container { width: 130px; height: 130px; border: 1px solid #222; }
-        #button-slot { flex: 1; display: flex; flex-direction: column; gap: 7px; padding: 12px; padding-top: 40px; position: relative; }
-        #distance-counter { position: absolute; top: 12px; left: 15px; font-size: 0.9em; color: var(--amber-dim); font-weight: bold; }
-        button { background: none; border: 1px solid var(--amber-dim); color: var(--amber); padding: 10px; cursor: pointer; font-family: inherit; font-size: 1.0em; text-align: center; width: 100%; min-height: 42px; }
+
+        #button-slot {
+            flex: 1; display: flex; flex-direction: column; 
+            gap: 7px; padding: 12px; padding-top: 40px; 
+            position: relative; overflow: hidden;
+        }
+
+        #distance-counter {
+            position: absolute; top: 12px; left: 15px;
+            font-size: 0.9em; color: var(--amber-dim);
+            letter-spacing: 1px; font-weight: bold;
+        }
+
+        button { 
+            background: none; border: 1px solid var(--amber-dim); color: var(--amber); 
+            padding: 10px; cursor: pointer; font-family: inherit; 
+            font-size: 1.0em; text-align: center; transition: 0.1s; 
+            width: 100%; min-height: 42px; font-weight: normal;
+        }
+        button:hover:not(:disabled) { background: var(--amber-dim); color: #fff; }
         button:disabled { border-color: #222; color: #222; opacity: 0.2; }
+        #opt4 { border-color: #402000; color: #805000; margin-top: 4px; }
+
         .cursor { display: inline-block; width: 8px; height: 1.1em; background: var(--amber); vertical-align: middle; margin-left: 7px; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
 <body>
+
 <div id="header">
-    <div>LOC: [<span id="area-name">---</span>]<br>STAT: <span id="area-desc">---</span></div>
-    <div style="text-align:right">SYNC: 100%<br>DIST: <span id="dist-val">000</span>M</div>
+    <div id="area-info">LOC: [<span id="area-name">INIT</span>]<br>STAT: <span id="area-desc">SCANNING</span></div>
+    <div style="text-align:right">SYNC: <span id="sync-val">100</span>%<br>STRS: <span id="stress-val">0</span></div>
 </div>
-<div id="main-container"><div id="log-container"><div id="log-content"></div></div></div>
+
+<div id="main-container">
+    <div id="log-container">
+        <div id="log-content"></div>
+    </div>
+</div>
+
 <div id="controls">
-    <div id="minimap-slot"><div id="minimap-container"><canvas id="minimap-canvas" width="130" height="130"></canvas></div></div>
+    <div id="minimap-slot">
+        <div id="minimap-container">
+            <canvas id="minimap-canvas" width="130" height="130"></canvas>
+        </div>
+    </div>
     <div id="button-slot">
-        <div id="distance-counter">AVAILABLE COMMANDS</div>
+        <div id="distance-counter">DIST: <span id="dist-val">000</span>M</div>
         <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
         <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
         <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
@@ -44,36 +121,37 @@
 </div>
 
 <script>
-    let playerPos = { x: 0, y: 0 }, history = [], scenarioData = [], mapData = [], completedActions = {}, totalDistance = 0;
+    let playerPos = { x: 0, y: 0 }, history = [];
+    let scenarioData = [], mapData = [];
+    let completedActions = {}, totalDistance = 0;
 
     async function init() {
         try {
             const v = Date.now();
-            console.log("System Initializing...");
-            const [scRes, mapRes] = await Promise.all([fetch(`scenario.csv?v=${v}`), fetch(`map.csv?v=${v}`)]);
-            
-            const scText = await scRes.text();
-            console.log("Scenario Loaded. Parsing...");
-            scenarioData = parseCSV(scText);
-            
-            const mapText = await mapRes.text();
-            mapData = mapText.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
-            
-            mapData.forEach((row, y) => { row.forEach((tile, x) => { if (tile === 'S') { playerPos = { x, y }; history = [{...playerPos}]; console.log(`Starting Point Found: ${x}-${y}`); } }); });
-            
+            const [scRes, mapRes] = await Promise.all([
+                fetch(`scenario.csv?v=${v}`), fetch(`map.csv?v=${v}`)
+            ]);
+            scenarioData = parseCSV(await scRes.text());
+            const rawMap = await mapRes.text();
+            mapData = rawMap.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).map(l => l.split(',').map(cell => cell.trim()));
+
+            mapData.forEach((row, y) => { 
+                row.forEach((tile, x) => { if (tile === 'S') { playerPos = { x, y }; history = [{...playerPos}]; } }); 
+            });
+
             updateState();
             requestAnimationFrame(renderLoop);
-        } catch (e) { 
-            console.error("CRITICAL ERROR:", e);
-            addLog("SYSTEM ERROR: DATA_LOAD_FAILED");
-        }
+        } catch (e) { console.error("BOOT_ERROR:", e); }
     }
 
     function parseCSV(text) {
+        const result = [];
         const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+        if (lines.length === 0) return [];
         const headers = lines[0].split(',').map(h => h.trim());
-        return lines.slice(1).map(line => {
+        for (let i = 1; i < lines.length; i++) {
             const row = {};
+            const line = lines[i];
             let cells = [], current = '', inQuotes = false;
             for (let char of line) {
                 if (char === '"') inQuotes = !inQuotes;
@@ -82,17 +160,15 @@
             }
             cells.push(current.trim());
             headers.forEach((h, idx) => { row[h] = cells[idx] || ""; });
-            return row;
-        });
+            result.push(row);
+        }
+        return result;
     }
 
     function updateState() {
         const posStr = `${playerPos.x}-${playerPos.y}`;
-        console.log(`Searching for Coord: ${posStr}`);
         const ev = scenarioData.find(row => row.Coord === posStr);
-        
         if (ev) {
-            console.log("Scenario Data Match Found!");
             const area = scenarioData.find(row => row.AreaID === ev.AreaID && !row.Coord);
             if (area) { 
                 document.getElementById('area-name').innerText = area.AreaName; 
@@ -101,19 +177,16 @@
             addLog(ev.Content);
             updateButtons(ev);
             document.getElementById('dist-val').innerText = String(totalDistance).padStart(3, '0');
-        } else {
-            console.warn(`No scenario data found for coord: ${posStr}`);
-            addLog(`[SYSTEM] NO DATA AT ${posStr}`);
         }
     }
 
-    function addLog(text) {
+    function addLog(text, isFeedback = false) {
         if(!text) return;
         const logContent = document.getElementById('log-content');
         const oldCursor = document.querySelector('.cursor');
         if (oldCursor) oldCursor.remove();
         const div = document.createElement('div');
-        div.className = 'log-entry';
+        div.className = isFeedback ? 'feedback-entry' : 'log-entry';
         div.innerText = text;
         const cursor = document.createElement('span');
         cursor.className = 'cursor';
@@ -123,22 +196,50 @@
     }
 
     function updateButtons(ev) {
+        const posStr = `${playerPos.x}-${playerPos.y}`;
+        const isCompleted = completedActions[posStr];
         for (let i = 1; i <= 3; i++) {
             const btn = document.getElementById(`opt${i}`);
-            const text = ev[`Opt${i}`];
-            if (text) { btn.innerText = text; btn.disabled = false; }
-            else { btn.innerText = "[ --- ]"; btn.disabled = true; }
+            const text = ev[`Opt${i}`], target = ev[`T${i}_Coord`];
+            if (text && text !== "") {
+                if (target === posStr && isCompleted) { btn.innerText = "[ COMPLETED ]"; btn.disabled = true; }
+                else { btn.innerText = text; btn.disabled = false; }
+            } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
+        }
+        const last = history.length > 1 ? history[history.length-2] : null;
+        const btn4 = document.getElementById('opt4');
+        const t4Target = ev.T4_Coord;
+        if (t4Target || last) {
+            btn4.innerText = ev.Opt4 || (t4Target ? `[ RETURN ]` : `[ BACK ]`);
+            btn4.disabled = false;
+        } else {
+            btn4.innerText = "[ START ]"; btn4.disabled = true;
         }
     }
 
     function handleOption(num) {
         const posStr = `${playerPos.x}-${playerPos.y}`;
         const ev = scenarioData.find(row => row.Coord === posStr);
-        if (!ev) return;
-        let next = ev[`T${num}_Coord`];
-        if (next) {
-            const p = next.split('-');
+        if (!ev && num !== 4) return;
+        let nextCoord = ev[`T${num}_Coord`];
+
+        if (nextCoord === posStr) {
+            completedActions[posStr] = true;
+            if (ev.Feedback) addLog(ev.Feedback, true);
+            updateButtons(ev);
+            return;
+        }
+        if (num === 4 && !nextCoord) {
+            if (history.length > 1) {
+                history.pop();
+                playerPos = {...history[history.length-1]};
+                totalDistance += 10;
+                updateState();
+            }
+        } else if (nextCoord) {
+            const p = nextCoord.split('-');
             playerPos = { x: Number(p[0]), y: Number(p[1]) };
+            history.push({...playerPos});
             totalDistance += 10;
             updateState();
         }
@@ -147,16 +248,19 @@
     function drawMinimap() {
         const canvas = document.getElementById('minimap-canvas');
         const ctx = canvas.getContext('2d');
-        const ts = 15, off = 10; // 테스트용 큰 타일
+        const ts = 7, off = 9;
         ctx.clearRect(0, 0, 130, 130);
         mapData.forEach((row, y) => { row.forEach((tile, x) => {
-            if(tile !== '0') {
-                ctx.fillStyle = (tile === 'S' || tile === '1') ? '#332200' : 'var(--amber)';
-                ctx.fillRect(x*ts+off, y*ts+off, ts-2, ts-2);
-            }
+            let c = 'transparent';
+            if (tile === '1' || tile === 'S') c = '#221100';
+            else if (tile === 'P' || tile === 'N') c = 'var(--amber)';
+            else if (tile === 'Q') c = 'var(--green)';
+            else if (tile === 'G') c = 'var(--red)';
+            if(tile !== '0') { ctx.fillStyle = c; ctx.fillRect(x*ts+off, y*ts+off, ts-1, ts-1); }
         }); });
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(playerPos.x*ts+off, playerPos.y*ts+off, ts-2, ts-2);
+        ctx.fillStyle = "#fff"; ctx.shadowBlur = 4; ctx.shadowColor = "#fff";
+        ctx.fillRect(playerPos.x*ts+off, playerPos.y*ts+off, ts-1, ts-1);
+        ctx.shadowBlur = 0;
     }
 
     function renderLoop() { drawMinimap(); requestAnimationFrame(renderLoop); }
