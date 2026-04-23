@@ -1,207 +1,247 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.0.0</title>
+    <title>DREAMCATCHER BaseCamp v3.0.0</title>
     <style>
-        /* [DREAMCATCHER CORE STYLE] */
         :root {
-            --bg: #0b0500;
-            --amber: #ff8c00;
-            --amber-dim: #804600;
-            --font-main: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
-            --font-size-base: 14px;
-            --font-size-header: 11pt;
-            --font-size-case: 18px;
+            --amber-bright: #ffb000;
+            --amber-dim: #553300;
+            --bg-dark: #0a0a0a;
+            --cell-size: 20px; /* 120px / 6 columns */
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--amber);
-            font-family: var(--font-main);
-            margin: 0; padding: 15px;
-            display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
+            background-color: var(--bg-dark);
+            color: var(--amber-bright);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Minimap Grid: 6x7 Strict Regulation */
+        #minimap-container {
+            border: 1px solid var(--amber-bright);
+            padding: 4px;
+            margin-bottom: 25px;
+            background-color: #000;
+        }
+
+        #minimap {
+            display: grid;
+            grid-template-columns: repeat(6, var(--cell-size));
+            grid-template-rows: repeat(7, var(--cell-size));
+            gap: 1px;
+            background-color: var(--amber-dim);
+        }
+
+        .point-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background-color: var(--bg-dark);
             box-sizing: border-box;
-            transition: all 0.5s ease;
         }
 
-        /* 헤더 영역 (스크린샷 비율 반영) */
-        #header {
-            text-align: center; border-bottom: 1px solid var(--amber-dim);
-            padding-bottom: 12px; margin-bottom: 15px;
+        /* Active Point: Pure Color Glow (No Text) */
+        .point-cell.active {
+            background-color: var(--amber-bright);
+            box-shadow: 0 0 10px var(--amber-bright);
+            z-index: 5;
         }
-        .header-top { font-size: 10px; letter-spacing: 2px; opacity: 0.7; margin-bottom: 5px; }
-        .case-title { font-size: var(--font-size-case); font-weight: bold; margin: 8px 0; color: var(--amber); }
-        .status-row { display: flex; justify-content: space-around; font-size: 11px; opacity: 0.9; }
 
-        /* 메인 레이아웃 */
-        #main-wrapper { display: flex; flex: 1; overflow: hidden; gap: 15px; }
-        #log-container { flex: 3.2; overflow-y: auto; padding-right: 8px; }
-        #side-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-
-        /* 박스 디자인 (스크린샷 재현) */
-        .msg-box {
-            font-size: var(--font-size-base);
-            line-height: 1.7; padding: 16px; margin-bottom: 15px;
+        /* Main Display Panel */
+        #display-panel {
+            width: 90%;
+            max-width: 480px;
             border: 1px solid var(--amber-dim);
-            border-radius: 4px; background: rgba(255, 255, 255, 0.02);
+            padding: 20px;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #case-info {
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+
+        #content-area {
+            flex-grow: 1;
+            line-height: 1.6;
+            margin-bottom: 25px;
             word-break: keep-all;
         }
-        .sys-box { border-style: dashed; opacity: 0.8; }
-        .noise-box { border-color: #ff0033; background: rgba(255, 0, 51, 0.08); color: #ff3333; }
 
-        /* 커서 애니메이션 */
-        .cursor { display: inline-block; width: 8px; height: 16px; background: var(--amber); 
-                  vertical-align: middle; margin-left: 4px; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        /* 미니맵 및 버튼 */
-        #minimap { height: 130px; border: 1px solid var(--amber-dim); display: grid; font-size: 9px; text-align: center; background: rgba(0,0,0,0.3); }
-        .cell { border: 0.1px solid rgba(128, 70, 0, 0.1); display: flex; align-items: center; justify-content: center; opacity: 0.4; }
-        .current-pos { background: var(--amber); color: #000; font-weight: bold; opacity: 1; }
-
-        #btn-group { display: flex; flex-direction: column; gap: 8px; }
-        .opt-btn {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--amber-dim); color: var(--amber);
-            padding: 10px 12px; font-size: 13px; cursor: pointer; text-align: left;
-            transition: 0.2s; border-radius: 2px;
+        /* Options: English UI Labeling */
+        #options-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-        .opt-btn:hover { background: var(--amber); color: #000; }
 
-        /* 스크롤바 숨기기 */
-        #log-container::-webkit-scrollbar { width: 3px; }
-        #log-container::-webkit-scrollbar-thumb { background: var(--amber-dim); }
+        .opt-btn {
+            background: none;
+            border: 1px solid var(--amber-dim);
+            color: var(--amber-bright);
+            padding: 10px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .opt-btn:hover {
+            border-color: var(--amber-bright);
+            background-color: rgba(255, 176, 0, 0.1);
+        }
+
+        /* System Status Bar */
+        #status-bar {
+            width: 90%;
+            max-width: 480px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            border-top: 1px solid var(--amber-dim);
+            padding-top: 10px;
+        }
+
+        .feedback-msg {
+            color: #fff;
+            font-style: italic;
+            margin-top: 5px;
+        }
     </style>
 </head>
-<body onclick="skipTypewriter()">
+<body>
 
-    <div id="header">
-        <div class="header-top">DREAMCATCHER PROTOCOL - <span id="mode-display">LOADING</span></div>
-        <div id="case-name" class="case-title">CASE: THE GUILT (죄책감)</div>
-        <div class="status-row">
-            <span>동기율: <span id="sync-val">0.0</span>%</span>
-            <span>무결성: 100%</span>
-            <span>부하: 0%</span>
-        </div>
+    <div id="case-info">CASE: Dive 01</div>
+
+    <div id="minimap-container">
+        <div id="minimap"></div>
     </div>
 
-    <div id="main-wrapper">
-        <div id="log-container"></div>
-        <div id="side-panel">
-            <div id="minimap"></div>
-            <div id="btn-group"></div>
-        </div>
+    <div id="display-panel">
+        <div id="content-area">Initializing System...</div>
+        <div id="options-wrapper"></div>
+        <div id="feedback-area" class="feedback-msg"></div>
+    </div>
+
+    <div id="status-bar">
+        <div id="pos-display">POINT: --</div>
+        <div id="sync-display">SYNC: 100%</div>
     </div>
 
     <script>
-        let scenarioData = [], configData = [], mapData = [];
-        let currentPoint = "S", isTyping = false, forceSkip = false;
-        let activeMode = "";
-
-        async function init() {
-            try {
-                const [cfgRaw, scnRaw, mapRaw] = await Promise.all([
-                    fetch('config.csv').then(r => r.text()),
-                    fetch('scenario.csv').then(r => r.text()),
-                    fetch('map.csv').then(r => r.text())
-                ]);
-                configData = parseCSV(cfgRaw);
-                scenarioData = parseCSV(scnRaw);
-                mapData = mapRaw.trim().split('\n').map(r => r.split(','));
-
-                runPoint(currentPoint);
-            } catch (err) {
-                alert("필수 CSV 파일(config, scenario, map)을 확인해주세요.");
+        // Scenario Data Mapping (Based on User CSV)
+        const scenario = {
+            "1-1": {
+                content: "[System] Diving Success. Sync rate 100%. Command: 'Diver, can you hear me? You have entered the gravity space of the surface consciousness.'",
+                options: [
+                    { label: "> Forward Survey", target: "1-2" },
+                    { label: "> Search Surroundings", target: "2-1" },
+                    { label: "> Return to Entry", target: "1-1" }
+                ]
+            },
+            "1-2": {
+                content: "Diver: 'Copy that. But this sector... it's unpleasantly quiet.' Command: 'Skip the chatter. First, recover the data fragments on the path.'",
+                options: [{ label: "> Access Data", target: "1-3" }]
+            },
+            "1-3": {
+                content: "[!] WARNING: Surface defense mechanism detected. Command: '100M left before Guardian awakens. Hurry up.'",
+                action: "SYNC+5",
+                feedback: "Recovery Complete: Sync Maintained.",
+                options: [
+                    { label: "* Salvage Fragment", target: "1-3" },
+                    { label: "> To Deep Pass", target: "1-4" }
+                ]
+            },
+            "1-4": {
+                content: "Diver: 'Passage found. But I think I hear Guardian?' Command: '30M before tracking starts. Don't look back, RUN.'",
+                options: [{ label: "> Enter Deep Layer", target: "1-5" }]
+            },
+            "1-5": {
+                content: "[System] Guardian(G) Activated. Command: 'Target locked on you. From now on, any deviation from path will result in immediate lockout.'",
+                options: [{ label: "> Dash to Exit", target: "1-6" }]
+            },
+            "1-6": {
+                content: "Diver: 'Almost there! I see light!' Command: '10M to Deep Entry. JUMP!'",
+                options: [{ label: "> Final Deep Entry", target: "9-9" }]
+            },
+            "9-9": {
+                content: "[System] Deep Consciousness Entry Successful. Surface connection terminated.",
+                action: "LOG_ALL",
+                options: [{ label: "EXIT", target: "FINISH" }]
             }
+        };
+
+        let currentPoint = "1-1";
+        let syncValue = 100;
+
+        // Initialize 6x7 Minimap
+        function initMap() {
+            const map = document.getElementById('minimap');
+            for (let y = 1; y <= 7; y++) {
+                for (let x = 1; x <= 6; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'point-cell';
+                    cell.id = `p-${x}-${y}`;
+                    map.appendChild(cell);
+                }
+            }
+            render();
         }
 
-        function parseCSV(text) {
-            const lines = text.split('\n').filter(l => l.trim());
-            const headers = lines[0].split(',').map(h => h.trim());
-            return lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
-                return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] }), {});
+        function render() {
+            const data = scenario[currentPoint];
+            if (!data) return;
+
+            // Update Text & Status
+            document.getElementById('content-area').innerText = data.content;
+            document.getElementById('pos-display').innerText = `POINT: ${currentPoint}`;
+            document.getElementById('sync-display').innerText = `SYNC: ${syncValue}%`;
+            document.getElementById('feedback-area').innerText = data.feedback || "";
+
+            // Handle Action Trigger
+            if (data.action === "SYNC+5") {
+                syncValue += 5;
+                data.action = null; // Prevent repeated triggers in this logic
+            }
+
+            // Update Minimap Active Point
+            document.querySelectorAll('.point-cell').forEach(c => c.classList.remove('active'));
+            const activeCell = document.getElementById(`p-${currentPoint}`);
+            if (activeCell) activeCell.classList.add('active');
+
+            // Generate Option Buttons
+            const optWrapper = document.getElementById('options-wrapper');
+            optWrapper.innerHTML = '';
+            data.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = opt.label;
+                btn.onclick = () => move(opt.target);
+                optWrapper.appendChild(btn);
             });
         }
 
-        function applyTheme(modeId) {
-            if (activeMode === modeId) return;
-            const cfg = configData.find(r => r.ID === modeId) || configData[0];
-            const root = document.documentElement.style;
-            root.setProperty('--amber', cfg.ThemeColor);
-            root.setProperty('--amber-dim', cfg.SubColor);
-            root.setProperty('--bg', cfg.BGColor);
-            document.getElementById('mode-display').innerText = cfg.Title;
-            activeMode = modeId;
-        }
-
-        function skipTypewriter() { if (isTyping) forceSkip = true; }
-
-        async function runPoint(point) {
-            currentPoint = point;
-            const rows = scenarioData.filter(r => r.POINT === point);
-            const container = document.getElementById('log-container');
-            document.getElementById('btn-group').innerHTML = '';
-
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (row.Mode) applyTheme(row.Mode);
-                const isFinalLine = (i === rows.length - 1);
-                await typeEffect(row.Content, container, isFinalLine);
+        function move(target) {
+            if (target === "FINISH") {
+                alert("SYSTEM: [LOG_ALL] Scenario Completed.");
+                return;
             }
-            createButtons(rows[rows.length - 1]);
-            drawMap();
+            currentPoint = target;
+            render();
         }
 
-        async function typeEffect(txt, target, isFinal) {
-            isTyping = true; forceSkip = false;
-            const box = document.createElement('div');
-            const isSys = txt.startsWith('[SYSTEM]');
-            const isNoise = txt.startsWith('[NOISE]');
-            box.className = `msg-box ${isSys ? 'sys-box' : ''} ${isNoise ? 'noise-box' : ''}`;
-            target.appendChild(box);
-            target.scrollTop = target.scrollHeight;
-
-            let i = 0;
-            while (i < txt.length) {
-                if (forceSkip) { box.innerText = txt; break; }
-                box.innerText += txt[i++];
-                await new Promise(r => setTimeout(r, 25));
-            }
-            if (isFinal) box.innerHTML += '<span class="cursor"></span>';
-            isTyping = false;
-        }
-
-        function createButtons(data) {
-            const area = document.getElementById('btn-group');
-            for (let i = 1; i <= 4; i++) {
-                const label = data[`Opt${i}`];
-                const dest = data[`T${i}_Coord`];
-                if (label && label !== "-") {
-                    const b = document.createElement('button');
-                    b.className = 'opt-btn';
-                    b.innerText = label;
-                    b.onclick = (e) => { e.stopPropagation(); runPoint(dest); };
-                    area.appendChild(b);
-                }
-            }
-        }
-
-        function drawMap() {
-            const el = document.getElementById('minimap');
-            el.style.gridTemplateColumns = `repeat(${mapData[0].length}, 1fr)`;
-            el.innerHTML = '';
-            mapData.forEach((row, y) => row.forEach((val, x) => {
-                const cell = document.createElement('div');
-                cell.className = `cell ${val === currentPoint ? 'current-pos' : ''}`;
-                cell.innerText = (val !== "0" && val !== "1") ? val : "";
-                el.appendChild(cell);
-            }));
-        }
-
-        window.onload = init;
+        window.onload = initMap;
     </script>
 </body>
 </html>
