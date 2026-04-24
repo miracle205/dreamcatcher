@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.0.8</title>
+    <title>DREAMCATCHER v3.0.9</title>
     <style>
         :root {
             --theme: #FF8C00;
@@ -20,23 +20,23 @@
             display: flex; flex-direction: column;
             height: 100vh; box-sizing: border-box;
             overflow: hidden;
-            transition: all 0.4s ease;
+            transition: background 0.5s, color 0.5s;
         }
 
-        /* --- 1. 상단 레이아웃 (스크린샷 기반 정밀 재현) --- */
+        /* [TOP] 스크린샷 기반 상단 레이아웃 */
         #header {
             border-bottom: 2px solid var(--sub);
             padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
         }
         .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
-        .case-line { font-size: 20px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; margin: 2px 0; }
+        .case-line { font-size: 20px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
         .status-row { 
             display: flex; gap: 15px; font-size: 11px; 
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* --- 2. 중앙 로그창 (3종 박스 폼) --- */
+        /* [MIDDLE] 로그창 3종 폼 */
         #log-container {
             flex: 1; overflow-y: auto;
             display: flex; flex-direction: column; gap: 12px;
@@ -44,23 +44,13 @@
         }
         .msg-box { padding: 14px; font-size: 15px; line-height: 1.6; word-break: keep-all; }
         
-        .box-system { 
-            border: 1px dashed var(--sub); 
-            background: rgba(255, 255, 255, 0.03); 
-            color: var(--theme); opacity: 0.9;
-        }
-        .box-filled { 
-            background: var(--theme); color: var(--bg); font-weight: bold; 
-        }
-        .box-solid { 
-            border-left: 5px solid var(--sub);
-            border-top: 1px solid rgba(255,255,255,0.05);
-            background: rgba(255, 255, 255, 0.02);
-        }
+        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); color: var(--theme); opacity: 0.9; }
+        .box-filled { background: var(--theme); color: var(--bg); font-weight: bold; }
+        .box-solid { border-left: 5px solid var(--sub); border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255, 255, 255, 0.02); }
 
-        /* --- 3. 하단 인터페이스 (미니맵 & 버튼) --- */
+        /* [BOTTOM] 하단 인터페이스 */
         #bottom-interface {
-            display: flex; height: 160px; gap: 12px;
+            display: flex; height: 165px; gap: 12px;
             border-top: 2px solid var(--sub); padding-top: 12px;
         }
 
@@ -76,10 +66,9 @@
         .opt-btn {
             background: none; border: 1.5px solid var(--sub); color: var(--theme);
             padding: 12px 15px; text-align: left; cursor: pointer;
-            font-family: var(--font-main); font-size: 14px; transition: 0.2s;
-            font-weight: bold;
+            font-family: var(--font-main); font-size: 14px; font-weight: bold;
         }
-        .opt-btn:hover { background: var(--theme); color: var(--bg); border-color: var(--theme); }
+        .opt-btn:hover { background: var(--theme); color: var(--bg); }
         .opt-btn::before { content: "[ "; } .opt-btn::after { content: " ]"; float: right; }
     </style>
 </head>
@@ -87,7 +76,7 @@
 
     <div id="header">
         <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL - INITIALIZING...</div>
-        <div id="ui-title" class="case-line">CASE: LOADING DATA</div>
+        <div id="ui-title" class="case-line">CASE: SYNCING...</div>
         <div class="status-row">
             <span>SYNC: <span id="val-sync">100.0</span>%</span>
             <span>CLEAN: 100%</span>
@@ -117,11 +106,11 @@
                 ]);
                 configData = parseCSV(cRes);
                 scenarioData = parseCSV(sRes);
+                
                 initMinimap();
+                applyTitle(); // TITLE 행 선제 처리
                 playPoint(currentPoint);
-            } catch (e) { 
-                console.error("DATA_ERR: CSV LOAD FAILED"); 
-            }
+            } catch (e) { console.error("FATAL_ERROR: DATA LOAD FAILED"); }
         }
 
         function parseCSV(text) {
@@ -131,6 +120,15 @@
                 const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
                 return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] }), {});
             });
+        }
+
+        // TITLE 행만 먼저 읽어 상단 UI 초기화
+        function applyTitle() {
+            const titleRow = scenarioData.find(r => r.point === 'TITLE');
+            if (titleRow) {
+                document.getElementById('ui-title').innerText = titleRow.Content;
+                if (titleRow.Mode) applyTheme(titleRow.Mode);
+            }
         }
 
         function initMinimap() {
@@ -147,7 +145,8 @@
 
         async function playPoint(point) {
             if (isTyping) return;
-            const events = scenarioData.filter(r => r.point === point);
+            // TITLE 행은 실행에서 제외
+            const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
             if (events.length === 0) return;
 
             currentPoint = point;
@@ -161,8 +160,8 @@
                 let boxClass = 'box-solid';
                 let content = ev.Content || "";
                 
-                // [시스템] 한글 감지 시 영문 [system]으로 강제 변환
-                if (content.includes('[시스템]') || content.startsWith('[system]')) {
+                // [시스템] -> [system] 자동 변환 및 스타일링
+                if (content.includes('[시스템]') || content.toLowerCase().includes('[system]')) {
                     content = content.replace('[시스템]', '[system]');
                     boxClass = 'box-system';
                 } else if (content.startsWith('[!]') || content.includes('의뢰인:')) {
@@ -177,15 +176,9 @@
                 }
             }
             
-            // ★ 사고 방지: 버튼 전용 데이터만 명시적으로 추출하여 전달 (Content 포함된 ev 객체 전달 금지)
-            const lastRow = events[events.length - 1];
-            const btnCleanSet = [
-                { label: lastRow.Opt1, target: lastRow.T1_point },
-                { label: lastRow.Opt2, target: lastRow.T2_point },
-                { label: lastRow.Opt3, target: lastRow.T3_point },
-                { label: lastRow.Opt4, target: lastRow.T4_point }
-            ];
-            renderButtons(btnCleanSet);
+            // v2.7.6의 안정적 구조 채택: 마지막 행에서 명확하게 Opt 필드만 추출
+            const finalRow = events[events.length - 1];
+            updateButtons(finalRow);
         }
 
         async function typeWriter(text, boxClass) {
@@ -212,18 +205,26 @@
             if (cell) cell.classList.add('active');
         }
 
-        function renderButtons(btns) {
+        // v2.7.6 방식 환원: 열 이름을 직접 지칭하여 데이터 오염 차단
+        function updateButtons(ev) {
             const container = document.getElementById('action-sector');
-            btns.forEach(b => {
-                // b.label에 시나리오 대사가 들어올 수 없도록 playPoint에서 정제됨
-                if (b.label && b.label !== "-" && b.label !== "") {
+            container.innerHTML = ''; 
+
+            for (let i = 1; i <= 4; i++) {
+                const label = ev[`Opt${i}`];
+                const target = ev[`T${i}_point`];
+
+                if (label && label !== "-" && label !== "") {
                     const btn = document.createElement('button');
                     btn.className = 'opt-btn';
-                    btn.innerText = b.label.startsWith('>') ? b.label : `> ${b.label}`;
-                    btn.onclick = (e) => { e.stopPropagation(); playPoint(b.target); };
+                    btn.innerText = label.startsWith('>') ? label : `> ${label}`;
+                    btn.onclick = (e) => { 
+                        e.stopPropagation(); 
+                        if (target && target !== "-") playPoint(target); 
+                    };
                     container.appendChild(btn);
                 }
-            });
+            }
         }
 
         function applyTheme(modeId) {
@@ -236,15 +237,14 @@
             r.setProperty('--sub', cfg.SubColor);
             r.setProperty('--bg', cfg.BGColor);
 
-            // 상단 헤더 단계별 텍스트 매핑 (큰 줄기 준수)
-            let protocolPrefix = "DREAMCATCHER PROTOCOL - ";
-            if (modeId === "M1") protocolPrefix += "INITIAL INQUIRY";
-            else if (modeId === "M2") protocolPrefix += "NEURAL DIVING";
-            else if (modeId === "M3") protocolPrefix += "DATA EXTRACTION";
-            else protocolPrefix += modeId;
+            // 상단 단계 텍스트 (M1~M3 줄기 준수)
+            let protocol = "DREAMCATCHER PROTOCOL - ";
+            if (modeId === "M1") protocol += "INITIAL INQUIRY";
+            else if (modeId === "M2") protocol += "NEURAL DIVING";
+            else if (modeId === "M3") protocol += "DATA EXTRACTION";
+            else protocol += modeId;
 
-            document.getElementById('ui-protocol').innerText = protocolPrefix;
-            document.getElementById('ui-title').innerText = `CASE: ${cfg.Title}`;
+            document.getElementById('ui-protocol').innerText = protocol;
             window.typeSpeed = parseInt(cfg.Speed) || 30;
             currentMode = modeId;
         }
