@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.2.3 - THE FINAL SOUL</title>
+    <title>DREAMCATCHER v3.2.4 - THE PERFECT RATIO</title>
     <style>
         :root {
+            /* config.csv 로드 전 기본 테마 (M2 앰버 기준) */
             --theme: #FF8C00; 
             --sub: rgba(255, 140, 0, 0.15); 
             --bg: #0a0a0a;
@@ -20,23 +21,26 @@
         }
 
         #game-container {
-            width: 100%; max-width: 600px; height: 100%;
+            width: 100%; max-width: 600px; height: 100vh; /* 전체 높이 100% 고정 */
             display: flex; flex-direction: column;
             border-left: 1.5px solid var(--theme); border-right: 1.5px solid var(--theme);
-            background: #0d0d0d; position: relative;
+            background: #0d0d0d; position: relative; overflow: hidden;
         }
 
+        /* [TOP] Header Section - 약 10% */
         #header {
-            flex: 0 0 auto; padding: 12px 15px; border-bottom: 2px solid var(--theme);
-            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 4px;
+            flex: 0 0 10%; padding: 10px 15px; border-bottom: 2px solid var(--theme);
+            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 3px;
+            box-sizing: border-box;
         }
         .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; font-weight: bold; }
-        .case-line { font-size: 18px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
-        .status-row { display: flex; justify-content: space-between; font-size: 11px; margin-top: 3px; opacity: 0.7; }
+        .case-line { font-size: 18px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .status-row { display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px; opacity: 0.7; }
 
+        /* [MIDDLE] Log Window - 6:4 비율 중 6에 해당 (약 55%) */
         #log-container { 
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column; 
-            gap: 18px; padding: 25px; box-sizing: border-box;
+            flex: 0 0 55%; overflow-y: auto; display: flex; flex-direction: column; 
+            gap: 16px; padding: 25px; box-sizing: border-box;
         }
 
         /* --- 디자인 위계 고정 --- */
@@ -47,58 +51,75 @@
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* 1. 의뢰인: 면 채움 + 검정 글씨 */
         .box-subject { 
             align-self: flex-start; background: var(--theme); color: #000 !important;
             font-weight: bold; border-radius: 15px 15px 15px 2px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
         }
 
+        /* 2. 나(다이버): 배경 검정 + 테두리 실선 */
         .box-me { 
             align-self: flex-end; background: #000; color: var(--theme);
             border: 1.5px solid var(--theme); border-radius: 15px 15px 2px 15px;
         }
 
+        /* 3. 시스템: 반투명 배경 + 점선 테두리 + 밝은 테마색 글자 (경고[!] 포함) */
         .box-system { 
             align-self: center; width: 95%; background: var(--sub); 
             border: 1px dashed var(--theme); color: var(--theme); 
-            filter: brightness(1.5); font-size: 12.5px; text-align: center;
+            filter: brightness(1.5); /* 테마색 계열 고명도 보정 */
+            font-size: 12.5px; text-align: center;
         }
 
+        /* 4. 지령실: 배경 투명 + 이중 점선 테두리 */
         .box-cmd { 
             align-self: flex-start; background: transparent; 
             border: 2px dotted var(--theme); color: var(--theme); border-radius: 4px;
         }
 
+        /* 5. 독백/묘사: 박스 없음 (식별자 제거 로직 작동) */
         .box-none { align-self: center; width: 100%; text-align: center; color: var(--theme); opacity: 0.8; }
         .italic { font-style: italic; }
 
         .cursor { display: inline-block; width: 10px; height: 16px; background: currentColor; animation: blink 0.8s infinite; vertical-align: middle; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* --- 하단 버튼 레이아웃 고정 (수정됨) --- */
+        /* [BOTTOM] Control Interface - 6:4 비율 중 4에 해당 (약 35%) */
         #bottom-interface {
             flex: 0 0 35%; display: flex; gap: 10px; padding: 12px;
             border-top: 2px solid var(--theme); background: #050505;
-            box-sizing: border-box;
+            box-sizing: border-box; overflow: hidden; /* 내부 요소 잘림 방지 */
         }
 
-        #minimap-sector { flex: 4; border: 1.5px solid var(--theme); background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #minimap-sector {
+            flex: 4; border: 1.5px solid var(--theme); background: #000; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            transition: all 0.3s; /* 애니메이션 효과 */
+        }
         #minimap { display: grid; gap: 2px; }
         .cell { width: 16px; height: 16px; background: #1a1a1a; }
         .cell.active { background: var(--theme); box-shadow: 0 0 8px var(--theme); }
 
+        /* [수정] 버튼 4개 강제 고정 레이아웃 */
         #action-sector { 
-            flex: 6; display: grid; grid-template-rows: repeat(4, 1fr); gap: 5px; 
-            height: 100%; box-sizing: border-box;
+            flex: 6; display: grid; 
+            grid-template-rows: repeat(4, 1fr); /* 4단 고정 格子 */
+            gap: 5px; height: 100%; box-sizing: border-box;
+            transition: all 0.3s;
         }
         button {
-            width: 100%; height: 100%; background: transparent; border: 1.2px solid var(--theme); 
+            width: 100%; height: 100%; min-height: 0; /* 강제 압축 허용 */
+            background: transparent; border: 1.2px solid var(--theme); 
             color: var(--theme); text-align: left; padding: 0 12px;
             font-family: inherit; font-size: 13px; cursor: pointer;
-            transition: all 0.2s; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+            transition: all 0.2s; font-weight: bold; 
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis; /* 한 줄 유지 및 생략 */
         }
         button:hover:not(:disabled) { background: var(--theme); color: #000; }
         button:disabled { opacity: 0.15; cursor: default; }
 
+        /* Scrollbar */
         #log-container::-webkit-scrollbar { width: 3px; }
         #log-container::-webkit-scrollbar-thumb { background: var(--theme); }
     </style>
@@ -107,7 +128,7 @@
 
     <div id="game-container">
         <div id="header">
-            <div id="ui-protocol" class="protocol-line">DREAMCATCHER SYSTEM</div>
+            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL</div>
             <div id="ui-title" class="case-line">INITIALIZING...</div>
             <div class="status-row">
                 <span>SYNC: <span id="val-sync">100.0</span>%</span>
@@ -183,7 +204,7 @@
                 let boxClass = "box-me"; 
                 let isItalic = false;
 
-                // [수정] 경고[!] 포함 시스템 판별 보강
+                // [핵심 로직] 판별 및 식별자 제거 (v3.2.3 기반)
                 if (raw.includes('[시스템]') || raw.includes('[SYSTEM]') || raw.includes('[!]')) {
                     boxClass = 'box-system';
                 } else if (raw.includes('지령실:') || raw.includes('본부:')) {
@@ -275,6 +296,17 @@
             r.setProperty('--bg', cfg.BGColor);
             document.getElementById('ui-protocol').innerText = `PROTOCOL: ${cfg.AreaName}`;
             window.typeSpeed = parseInt(cfg.Speed) || 30;
+
+            // [수정] M1, M2 모드에서 미니맵 숨기기 및 버튼 확장
+            const minimapSector = document.getElementById('minimap-sector');
+            const actionSector = document.getElementById('action-sector');
+            if (modeId === 'M1' || modeId === 'M2') {
+                minimapSector.style.display = 'none'; // 미니맵 숨김
+                actionSector.style.flex = '10'; // 버튼 섹션이 전체 너비 차지
+            } else {
+                minimapSector.style.display = 'flex'; // 미니맵 복구
+                actionSector.style.flex = '6'; // 원래 비율로 복구
+            }
             currentMode = modeId;
         }
 
