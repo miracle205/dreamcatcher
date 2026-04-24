@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.2.0 - THE ORIGINAL SOUL</title>
+    <title>DREAMCATCHER v3.2.1 - THE ORIGINAL SOUL</title>
     <style>
         :root {
-            /* config.csv 로드 전 기본 테마 (M2 앰버 기준) */
             --theme: #FF8C00; 
-            --sub: rgba(255, 140, 0, 0.15); 
+            --sub: rgba(255, 140, 0, 0.2); 
             --bg: #0a0a0a;
             --font-main: 'Courier New', Courier, monospace;
         }
@@ -24,13 +23,12 @@
             width: 100%; max-width: 600px; height: 100%;
             display: flex; flex-direction: column;
             border-left: 1.5px solid var(--theme); border-right: 1.5px solid var(--theme);
-            background: #0f0f0f; position: relative;
+            background: #0d0d0d; position: relative;
         }
 
-        /* [TOP] Header Section */
         #header {
             flex: 0 0 auto; padding: 15px; border-bottom: 2px solid var(--theme);
-            background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; gap: 4px;
+            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 4px;
         }
         .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; font-weight: bold; }
         .case-line { font-size: 20px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
@@ -39,56 +37,61 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; margin-top: 5px;
         }
 
-        /* [MIDDLE] Log Window - 6:4 비율 및 디자인 위계 */
         #log-container { 
             flex: 6; overflow-y: auto; display: flex; flex-direction: column; 
-            gap: 16px; padding: 20px; box-sizing: border-box;
+            gap: 18px; padding: 25px; box-sizing: border-box;
         }
 
-        /* 대화 박스 공통 애니메이션 */
+        /* [핵심] 디자인 위계 CSS */
         .msg-box { 
             max-width: 85%; padding: 12px 16px; font-size: 14.5px; line-height: 1.6;
-            position: relative; animation: slideUp 0.35s ease-out forwards;
+            position: relative; animation: slideUp 0.3s ease-out forwards;
             word-break: keep-all; white-space: pre-wrap;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 1. 의뢰인(대상자): 배경색 꽉 참 (면 강조) */
+        /* 1. 의뢰인: 면 채움 + 검정 글씨 */
         .box-subject { 
-            align-self: flex-start; background: var(--theme); color: var(--bg);
+            align-self: flex-start; background: var(--theme); color: #000 !important;
             font-weight: bold; border-radius: 15px 15px 15px 2px;
-            box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
         }
 
-        /* 2. 나(연구원/다이버): 배경검정 + 테두리 (선 강조) */
+        /* 2. 나(다이버): 배경 검정 + 테두리 실선 */
         .box-me { 
-            align-self: flex-end; background: var(--bg); color: var(--theme);
+            align-self: flex-end; background: #000; color: var(--theme);
             border: 1.5px solid var(--theme); border-radius: 15px 15px 2px 15px;
         }
 
-        /* 3. 시스템: 반투명 배경 + 점선 */
+        /* 3. 시스템: 반투명 배경 + 점선 테두리 + 밝은 글씨 */
         .box-system { 
             align-self: center; width: 92%; background: var(--sub); 
-            border: 1px dashed var(--theme); color: #fff; 
-            font-size: 12.5px; text-align: center; opacity: 0.9;
+            border: 1px dashed var(--theme); color: #fff; /* JS에서 테마색 기반 고명도로 보정 */
+            font-size: 12px; text-align: center; font-weight: bold;
         }
 
-        /* 4. 지령실/기타: 나와 구분되는 점선 테두리 */
+        /* 4. 지령실: 배경 투명 + 이중 점선 테두리 */
         .box-cmd { 
             align-self: flex-start; background: transparent; 
-            border: 1.2px dashed var(--theme); color: var(--theme);
-            border-radius: 4px; font-style: italic;
+            border: 2px dotted var(--theme); color: var(--theme);
+            border-radius: 4px; padding: 10px 14px;
         }
 
-        /* 타이핑 커서 깜빡임 */
+        /* 5. 독백/묘사: 박스 없음 */
+        .box-none { 
+            align-self: center; width: 95%; background: transparent; 
+            padding: 5px 0; color: var(--theme); opacity: 0.8; text-align: center;
+        }
+        .italic { font-style: italic; }
+
         .cursor {
-            display: inline-block; width: 9px; height: 15px;
+            display: inline-block; width: 10px; height: 16px;
             background: currentColor; margin-left: 3px;
             animation: blink 0.8s infinite; vertical-align: middle;
         }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* [BOTTOM] Control Interface - 40% 비율 */
+        /* [BOTTOM] Control */
         #bottom-interface {
             flex: 4; display: flex; gap: 12px; padding: 15px;
             border-top: 2px solid var(--theme); background: #050505;
@@ -109,10 +112,9 @@
             font-family: inherit; font-size: 14px; cursor: pointer;
             transition: all 0.2s; font-weight: bold;
         }
-        button:hover:not(:disabled) { background: var(--theme); color: var(--bg); }
-        button:disabled { opacity: 0.1; cursor: default; }
+        button:hover:not(:disabled) { background: var(--theme); color: #000; }
+        button:disabled { opacity: 0.1; }
 
-        /* Scrollbar */
         #log-container::-webkit-scrollbar { width: 3px; }
         #log-container::-webkit-scrollbar-thumb { background: var(--theme); }
     </style>
@@ -158,10 +160,9 @@
                 initMinimap();
                 applyTitleConfig();
                 playPoint(currentPoint);
-            } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
+            } catch (e) { console.error("BOOT_FAILED"); }
         }
 
-        // [v3.1.4] 띄어쓰기 보존형 수동 파서
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
             const headers = lines[0].replace('#', '').split(',').map(h => h.trim());
@@ -193,20 +194,33 @@
             updateMinimap(point);
 
             for (const ev of events) {
-                let boxClass = 'box-me'; 
-                let text = ev.Content || "";
-                
-                // 주체 판별 로직
-                if (text.includes('[시스템]')) {
-                    text = text.replace('[시스템]', '[SYSTEM]');
+                let raw = ev.Content || "";
+                let text = raw;
+                let boxClass = "box-me"; 
+                let isItalic = false;
+
+                // [핵심 로직] 판별 및 식별자 제거
+                if (raw.includes('[시스템]') || raw.includes('[SYSTEM]')) {
                     boxClass = 'box-system';
-                } else if (text.includes('지령실:') || text.includes('본부:')) {
+                    text = raw.replace(/\[시스템\]|\[SYSTEM\]/g, "").trim();
+                } else if (raw.includes('지령실:') || raw.includes('본부:')) {
                     boxClass = 'box-cmd';
-                } else if (text.includes('의뢰인:') || text.includes('대상자:') || text.includes('다이버:')) {
+                } else if (raw.includes('의뢰인:') || raw.includes('대상자:') || raw.includes('박사님,')) {
                     boxClass = 'box-subject';
+                } else if (raw.startsWith('(독백)') || (raw.startsWith('(') && raw.endsWith(')'))) {
+                    boxClass = 'box-none';
+                    isItalic = true;
+                    text = raw.replace(/^\(독백\)\s*/, "").replace(/^\(|\)$/g, "").trim();
+                } else if (raw.startsWith('(묘사)') || (raw.startsWith('<') && raw.endsWith('>'))) {
+                    boxClass = 'box-none';
+                    text = raw.replace(/^\(묘사\)\s*/, "").replace(/^<|>$/g, "").trim();
+                } else if (raw.includes('다이버:') || raw.includes('연구원:') || raw.includes('나:')) {
+                    boxClass = 'box-me';
+                } else {
+                    boxClass = 'box-me'; // 기본값 (나)
                 }
 
-                await typeWriter(text, boxClass);
+                await typeWriter(text, boxClass, isItalic);
                 
                 if (ev.Action && ev.Action.includes('SYNC+')) {
                     syncValue += parseFloat(ev.Action.split('+')[1]);
@@ -216,11 +230,11 @@
             updateButtons(events[events.length - 1]);
         }
 
-        async function typeWriter(text, boxClass) {
+        async function typeWriter(text, boxClass, isItalic) {
             isTyping = true; shouldSkip = false;
             const container = document.getElementById('log-container');
             const div = document.createElement('div');
-            div.className = `msg-box ${boxClass}`;
+            div.className = `msg-box ${boxClass} ${isItalic ? 'italic' : ''}`;
             container.appendChild(div);
 
             const contentSpan = document.createElement('span');
@@ -237,7 +251,7 @@
                 await new Promise(r => setTimeout(r, window.typeSpeed || 30));
             }
             
-            cursor.remove(); // 타이핑 종료 시 커서 제거 (필요시 유지 가능)
+            cursor.remove();
             isTyping = false;
         }
 
@@ -276,13 +290,11 @@
             if (currentMode === modeId) return;
             const cfg = configData.find(c => c.ID === modeId);
             if (!cfg) return;
-            
             const r = document.documentElement.style;
             r.setProperty('--theme', cfg.ThemeColor);
             r.setProperty('--sub', cfg.SubColor);
             r.setProperty('--bg', cfg.BGColor);
-            
-            document.getElementById('ui-protocol').innerText = `DREAMCATCHER PROTOCOL - ${modeId}`;
+            document.getElementById('ui-protocol').innerText = `DREAMCATCHER PROTOCOL - ${cfg.AreaName}`;
             window.typeSpeed = parseInt(cfg.Speed) || 30;
             currentMode = modeId;
         }
