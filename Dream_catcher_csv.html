@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.1.3 REBOOT</title>
+    <title>DREAMCATCHER v3.1.4 REBOOT</title>
     <style>
         :root {
             --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
@@ -17,7 +17,7 @@
             box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] Header */
+        /* [TOP] Header Section */
         #header {
             border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
@@ -29,13 +29,14 @@
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* [MIDDLE] Log Window - 폰트 사이즈 최적화 */
+        /* [MIDDLE] Log Window - 폰트 사이즈 및 가독성 최적화 */
         #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .msg-box { 
             padding: 12px; 
             font-size: 13.5px; 
             line-height: 1.5; 
             word-break: keep-all; 
+            white-space: pre-wrap; /* 공백 및 줄바꿈 보존 */
         }
         
         .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); opacity: 0.8; }
@@ -60,7 +61,7 @@
             background: none; border: 1.5px solid var(--sub); color: var(--theme);
             padding: 10px 14px; text-align: left; cursor: pointer;
             font-family: inherit; font-size: 13px; font-weight: bold;
-            transition: all 0.2s;
+            transition: all 0.1s;
         }
         button:hover:not(:disabled) { background: var(--theme); color: var(--bg); border-color: var(--theme); }
         button:disabled { opacity: 0.15; cursor: default; }
@@ -111,20 +112,38 @@
             } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
         }
 
-        // [v3.1.3] 띄어쓰기 실종 문제를 수정한 정교한 파서
+        // [v3.1.4] 정규식을 배제하고 글자 단위로 읽는 수동 파서 (띄어쓰기 완전 보존)
         function parseCSV(text) {
-            const lines = text.trim().split('\n');
+            const lines = text.split(/\r?\n/);
             const headers = lines[0].replace('#', '').split(',').map(h => h.trim());
 
-            return lines.slice(1).map(line => {
-                // \s 필터를 제거하여 문장 내 공백을 보존
-                const regex = /(".*?"|[^",]+|(?<=,)(?=,)|(?<=^)(?=,)|(?<=,)(?=$))/g;
-                const rawValues = line.match(regex) || [];
-                // trim()은 문장 앞뒤의 불필요한 공백만 제거하고 문장 사이의 공백은 유지함
-                const values = rawValues.map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            return lines.slice(1).filter(line => line.trim()).map(line => {
+                let values = [];
+                let current = '';
+                let inQuotes = false;
 
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        // 연속된 큰따옴표("") 처리
+                        if (inQuotes && line[i+1] === '"') {
+                            current += '"'; i++;
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current); // trim() 하지 않음 (데이터 순수성 보존)
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current);
+
+                // 앞뒤 불필요한 공백만 제거하고 헤더 맵핑
                 return headers.reduce((obj, h, i) => {
-                    obj[h] = values[i] || "";
+                    let val = values[i] ? values[i].trim() : "";
+                    obj[h] = val;
                     return obj;
                 }, {});
             });
@@ -173,8 +192,7 @@
                 await typeWriter(text, boxClass);
                 
                 if (ev.Action && ev.Action.includes('SYNC+')) {
-                    const add = parseFloat(ev.Action.split('+')[1]);
-                    syncValue += add;
+                    syncValue += parseFloat(ev.Action.split('+')[1]);
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
                 }
             }
