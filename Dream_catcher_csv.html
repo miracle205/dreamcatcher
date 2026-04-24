@@ -3,141 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.2.4 - THE PERFECT RATIO</title>
+    <title>DREAMCATCHER v3.2.6 - FINAL LOCK</title>
     <style>
         :root {
-            /* config.csv 로드 전 기본 테마 (M2 앰버 기준) */
-            --theme: #FF8C00; 
-            --sub: rgba(255, 140, 0, 0.15); 
-            --bg: #0a0a0a;
+            --theme: #FF8C00; --sub: rgba(255, 140, 0, 0.15); --bg: #0a0a0a;
             --font-main: 'Courier New', Courier, monospace;
         }
 
-        body {
-            background-color: var(--bg); color: var(--theme);
-            font-family: var(--font-main); margin: 0; padding: 0;
-            display: flex; justify-content: center; height: 100vh;
-            box-sizing: border-box; overflow: hidden;
-        }
-
+        /* 1. 전체 틀: 절대 화면 밖으로 못 나감 */
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
         #game-container {
-            width: 100%; max-width: 600px; height: 100vh; /* 전체 높이 100% 고정 */
-            display: flex; flex-direction: column;
+            width: 100%; max-width: 600px; height: 100vh;
+            margin: 0 auto; display: flex; flex-direction: column;
             border-left: 1.5px solid var(--theme); border-right: 1.5px solid var(--theme);
-            background: #0d0d0d; position: relative; overflow: hidden;
+            background: #0d0d0d; box-sizing: border-box;
         }
 
-        /* [TOP] Header Section - 약 10% */
+        /* 2. 상단 헤더: 10% 고정 */
         #header {
-            flex: 0 0 10%; padding: 10px 15px; border-bottom: 2px solid var(--theme);
-            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 3px;
-            box-sizing: border-box;
+            flex: 0 0 10%; min-height: 70px;
+            padding: 10px 15px; border-bottom: 2px solid var(--theme);
+            display: flex; flex-direction: column; justify-content: center;
+            box-sizing: border-box; background: rgba(0,0,0,0.9);
         }
-        .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; font-weight: bold; }
-        .case-line { font-size: 18px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .status-row { display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px; opacity: 0.7; }
 
-        /* [MIDDLE] Log Window - 6:4 비율 중 6에 해당 (약 55%) */
+        /* 3. 대화창 (상단): 50% (헤더 포함 60% 달성) */
         #log-container { 
-            flex: 0 0 55%; overflow-y: auto; display: flex; flex-direction: column; 
-            gap: 16px; padding: 25px; box-sizing: border-box;
+            flex: 1; /* 가용 공간 점유 */
+            overflow-y: auto; display: flex; flex-direction: column; 
+            gap: 15px; padding: 20px; box-sizing: border-box;
         }
 
-        /* --- 디자인 위계 고정 --- */
-        .msg-box { 
-            max-width: 85%; padding: 12px 16px; font-size: 14px; line-height: 1.6;
-            position: relative; animation: slideUp 0.3s ease-out forwards;
-            word-break: keep-all; white-space: pre-wrap;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* 1. 의뢰인: 면 채움 + 검정 글씨 */
-        .box-subject { 
-            align-self: flex-start; background: var(--theme); color: #000 !important;
-            font-weight: bold; border-radius: 15px 15px 15px 2px;
-            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
-        }
-
-        /* 2. 나(다이버): 배경 검정 + 테두리 실선 */
-        .box-me { 
-            align-self: flex-end; background: #000; color: var(--theme);
-            border: 1.5px solid var(--theme); border-radius: 15px 15px 2px 15px;
-        }
-
-        /* 3. 시스템: 반투명 배경 + 점선 테두리 + 밝은 테마색 글자 (경고[!] 포함) */
-        .box-system { 
-            align-self: center; width: 95%; background: var(--sub); 
-            border: 1px dashed var(--theme); color: var(--theme); 
-            filter: brightness(1.5); /* 테마색 계열 고명도 보정 */
-            font-size: 12.5px; text-align: center;
-        }
-
-        /* 4. 지령실: 배경 투명 + 이중 점선 테두리 */
-        .box-cmd { 
-            align-self: flex-start; background: transparent; 
-            border: 2px dotted var(--theme); color: var(--theme); border-radius: 4px;
-        }
-
-        /* 5. 독백/묘사: 박스 없음 (식별자 제거 로직 작동) */
+        /* [핵심] 디자인 위계 식별자 */
+        .msg-box { max-width: 85%; padding: 10px 14px; font-size: 14px; line-height: 1.6; word-break: keep-all; }
+        .box-subject { align-self: flex-start; background: var(--theme); color: #000 !important; font-weight: bold; border-radius: 12px 12px 12px 2px; }
+        .box-me { align-self: flex-end; background: #000; color: var(--theme); border: 1.5px solid var(--theme); border-radius: 12px 12px 2px 12px; }
+        .box-system { align-self: center; width: 92%; background: var(--sub); border: 1px dashed var(--theme); color: var(--theme); filter: brightness(1.4); font-size: 12px; text-align: center; }
+        .box-cmd { align-self: flex-start; border: 2px dotted var(--theme); border-radius: 4px; padding: 8px; }
         .box-none { align-self: center; width: 100%; text-align: center; color: var(--theme); opacity: 0.8; }
         .italic { font-style: italic; }
 
-        .cursor { display: inline-block; width: 10px; height: 16px; background: currentColor; animation: blink 0.8s infinite; vertical-align: middle; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        /* [BOTTOM] Control Interface - 6:4 비율 중 4에 해당 (약 35%) */
+        /* 4. 하단 조작계 (하단): 40% 절대 고정 */
         #bottom-interface {
-            flex: 0 0 35%; display: flex; gap: 10px; padding: 12px;
+            flex: 0 0 40%; /* 40% 아래로 절대 안 내려감 */
+            display: flex; gap: 10px; padding: 15px;
             border-top: 2px solid var(--theme); background: #050505;
-            box-sizing: border-box; overflow: hidden; /* 내부 요소 잘림 방지 */
+            box-sizing: border-box;
         }
 
-        #minimap-sector {
-            flex: 4; border: 1.5px solid var(--theme); background: #000; 
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-            transition: all 0.3s; /* 애니메이션 효과 */
-        }
-        #minimap { display: grid; gap: 2px; }
-        .cell { width: 16px; height: 16px; background: #1a1a1a; }
-        .cell.active { background: var(--theme); box-shadow: 0 0 8px var(--theme); }
-
-        /* [수정] 버튼 4개 강제 고정 레이아웃 */
-        #action-sector { 
-            flex: 6; display: grid; 
-            grid-template-rows: repeat(4, 1fr); /* 4단 고정 格子 */
-            gap: 5px; height: 100%; box-sizing: border-box;
-            transition: all 0.3s;
-        }
+        #minimap-sector { flex: 4; border: 1.5px solid var(--theme); background: #000; display: flex; align-items: center; justify-content: center; }
+        #action-sector { flex: 6; display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; height: 100%; }
+        
         button {
-            width: 100%; height: 100%; min-height: 0; /* 강제 압축 허용 */
-            background: transparent; border: 1.2px solid var(--theme); 
+            height: 100%; background: transparent; border: 1.2px solid var(--theme); 
             color: var(--theme); text-align: left; padding: 0 12px;
-            font-family: inherit; font-size: 13px; cursor: pointer;
-            transition: all 0.2s; font-weight: bold; 
-            overflow: hidden; white-space: nowrap; text-overflow: ellipsis; /* 한 줄 유지 및 생략 */
+            font-family: inherit; font-size: 13px; font-weight: bold;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        button:hover:not(:disabled) { background: var(--theme); color: #000; }
-        button:disabled { opacity: 0.15; cursor: default; }
+        button:disabled { opacity: 0.15; }
 
-        /* Scrollbar */
-        #log-container::-webkit-scrollbar { width: 3px; }
-        #log-container::-webkit-scrollbar-thumb { background: var(--theme); }
+        #minimap { display: grid; gap: 2px; }
+        .cell { width: 14px; height: 14px; background: #1a1a1a; }
+        .cell.active { background: var(--theme); box-shadow: 0 0 8px var(--theme); }
     </style>
 </head>
 <body onclick="skipTypewriter()">
-
     <div id="game-container">
         <div id="header">
-            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL</div>
-            <div id="ui-title" class="case-line">INITIALIZING...</div>
-            <div class="status-row">
+            <div id="ui-protocol" class="protocol-line">PROTOCOL: SYNCING</div>
+            <div id="ui-title" class="case-line">AI HUNTER - DIVE</div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; opacity:0.7;">
                 <span>SYNC: <span id="val-sync">100.0</span>%</span>
                 <span>POINT: <span id="val-point">--</span></span>
             </div>
         </div>
-
         <div id="log-container"></div>
-
         <div id="bottom-interface">
             <div id="minimap-sector"><div id="minimap"></div></div>
             <div id="action-sector">
@@ -148,10 +88,9 @@
             </div>
         </div>
     </div>
-
     <script>
         let scenarioData = [], configData = [];
-        let currentPoint = "1-1", currentMode = "", syncValue = 100.0;
+        let currentPoint = "1-1", syncValue = 100.0;
         let isTyping = false, shouldSkip = false;
 
         async function boot() {
@@ -182,10 +121,7 @@
                     else { current += char; }
                 }
                 values.push(current);
-                return headers.reduce((obj, h, i) => {
-                    obj[h] = values[i] ? values[i].trim() : "";
-                    return obj;
-                }, {});
+                return headers.reduce((obj, h, i) => { obj[h] = values[i] ? values[i].trim() : ""; return obj; }, {});
             });
         }
 
@@ -193,38 +129,24 @@
             if (isTyping) return;
             const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
             if (events.length === 0) return;
-            
             currentPoint = point;
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
-
             for (const ev of events) {
                 let raw = ev.Content || "";
-                let text = raw;
-                let boxClass = "box-me"; 
-                let isItalic = false;
+                let text = raw, boxClass = "box-me", isItalic = false;
 
-                // [핵심 로직] 판별 및 식별자 제거 (v3.2.3 기반)
-                if (raw.includes('[시스템]') || raw.includes('[SYSTEM]') || raw.includes('[!]')) {
-                    boxClass = 'box-system';
-                } else if (raw.includes('지령실:') || raw.includes('본부:')) {
-                    boxClass = 'box-cmd';
-                } else if (raw.includes('의뢰인:') || raw.includes('대상자:') || raw.includes('박사님,')) {
-                    boxClass = 'box-subject';
-                } else if (raw.startsWith('(독백)') || (raw.startsWith('(') && raw.endsWith(')'))) {
+                if (raw.includes('[시스템]') || raw.includes('[SYSTEM]') || raw.includes('[!]')) { boxClass = 'box-system'; }
+                else if (raw.includes('지령실:') || raw.includes('본부:')) { boxClass = 'box-cmd'; }
+                else if (raw.includes('의뢰인:') || raw.includes('대상자:') || raw.includes('박사님,')) { boxClass = 'box-subject'; }
+                else if (raw.startsWith('(독백)') || (raw.startsWith('(') && raw.endsWith(')'))) {
                     boxClass = 'box-none'; isItalic = true;
                     text = raw.replace(/^\(독백\)\s*/, "").replace(/^\(|\)$/g, "").trim();
                 } else if (raw.startsWith('(묘사)') || (raw.startsWith('<') && raw.endsWith('>'))) {
                     boxClass = 'box-none';
                     text = raw.replace(/^\(묘사\)\s*/, "").replace(/^<|>$/g, "").trim();
                 }
-
                 await typeWriter(text, boxClass, isItalic);
-                
-                if (ev.Action && ev.Action.includes('SYNC+')) {
-                    syncValue += parseFloat(ev.Action.split('+')[1]);
-                    document.getElementById('val-sync').innerText = syncValue.toFixed(1);
-                }
             }
             updateButtons(events[events.length - 1]);
         }
@@ -235,20 +157,12 @@
             const div = document.createElement('div');
             div.className = `msg-box ${boxClass} ${isItalic ? 'italic' : ''}`;
             container.appendChild(div);
-
-            const contentSpan = document.createElement('span');
-            div.appendChild(contentSpan);
-            const cursor = document.createElement('span');
-            cursor.className = 'cursor';
-            div.appendChild(cursor);
-
             for (let char of text) {
-                if (shouldSkip) { contentSpan.innerText = text; break; }
-                contentSpan.innerText += char;
+                if (shouldSkip) { div.innerText = text; break; }
+                div.innerText += char;
                 container.scrollTop = container.scrollHeight;
-                await new Promise(r => setTimeout(r, window.typeSpeed || 30));
+                await new Promise(r => setTimeout(r, 30));
             }
-            cursor.remove();
             isTyping = false;
         }
 
@@ -268,15 +182,11 @@
         }
 
         function setBtn(btn, label, target) {
-            btn.onclick = null; // 초기화
-            if (label && label !== "-" && label !== "" && label !== " ") {
+            if (label && label !== "-" && label !== "") {
                 btn.innerText = label.startsWith('>') ? label : `> ${label}`;
                 btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
-            } else { 
-                btn.innerText = "[ --- ]"; 
-                btn.disabled = true; 
-            }
+            } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
         }
 
         function applyTitleConfig() {
@@ -295,19 +205,12 @@
             r.setProperty('--sub', cfg.SubColor);
             r.setProperty('--bg', cfg.BGColor);
             document.getElementById('ui-protocol').innerText = `PROTOCOL: ${cfg.AreaName}`;
-            window.typeSpeed = parseInt(cfg.Speed) || 30;
-
-            // [수정] M1, M2 모드에서 미니맵 숨기기 및 버튼 확장
-            const minimapSector = document.getElementById('minimap-sector');
-            const actionSector = document.getElementById('action-sector');
-            if (modeId === 'M1' || modeId === 'M2') {
-                minimapSector.style.display = 'none'; // 미니맵 숨김
-                actionSector.style.flex = '10'; // 버튼 섹션이 전체 너비 차지
-            } else {
-                minimapSector.style.display = 'flex'; // 미니맵 복구
-                actionSector.style.flex = '6'; // 원래 비율로 복구
-            }
-            currentMode = modeId;
+            
+            const mini = document.getElementById('minimap-sector');
+            const act = document.getElementById('action-sector');
+            // M1만 숨기고 M2, M3 등은 미니맵 유지
+            if (modeId === 'M1') { mini.style.display = 'none'; act.style.flex = '10'; }
+            else { mini.style.display = 'flex'; act.style.flex = '6'; }
         }
 
         function initMinimap() {
@@ -316,12 +219,10 @@
             for (let i = 0; i < 42; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
-                cell.id = `p-${x}-${y}`;
+                cell.id = `p-${(i % 6) + 1}-${Math.floor(i / 6) + 1}`;
                 map.appendChild(cell);
             }
         }
-
         window.onload = boot;
     </script>
 </body>
