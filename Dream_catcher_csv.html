@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER PROTOCOL v3.0.3</title>
+    <title>DREAMCATCHER PROTOCOL v3.0.4</title>
     <style>
         :root {
             --theme: #FF8C00;
@@ -34,45 +34,60 @@
         .case-title { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
         .status-group { text-align: right; font-size: 11px; line-height: 1.2; }
 
-        /* 2. 중앙 로그창 (공백 최소화 및 박스 아키텍처) */
+        /* 2. 중앙 로그창 (스크린샷 기반 3종 박스 폼) */
         #log-container {
             flex: 1; overflow-y: auto;
             margin-bottom: 12px; padding-right: 5px;
-            scrollbar-width: thin; scrollbar-color: var(--sub) transparent;
+            display: flex; flex-direction: column; gap: 10px;
         }
         
-        /* 로그 박스 3종 세트 복원 */
         .msg-box { 
-            margin-bottom: 10px; padding: 12px; 
-            border: 1px solid var(--sub); 
-            background: rgba(255, 255, 255, 0.02);
-            font-size: 14px; line-height: 1.5;
-            word-break: keep-all;
+            padding: 12px; font-size: 14px; line-height: 1.6; word-break: keep-all;
+            transition: opacity 0.3s ease;
         }
-        .sys-box { border-style: dashed; opacity: 0.8; color: #ccc; background: rgba(255, 255, 255, 0.05); }
-        .noise-box { border-color: #ff0033 !important; color: #ff0033 !important; background: rgba(255, 0, 51, 0.1); font-weight: bold; }
 
-        /* 3. 하단 레이아웃 (가변 맵 & 버튼 분리) */
+        /* [system] : 얇은 점선(Dashed) 박스 */
+        .box-system { 
+            border: 1px dashed var(--sub); 
+            background: rgba(255, 255, 255, 0.03); 
+            color: #aaa; opacity: 0.8;
+        }
+
+        /* [!] 또는 중요 대사 : 배경이 꽉 찬(Filled) 박스 */
+        .box-filled { 
+            background: var(--theme); 
+            color: var(--bg); 
+            font-weight: bold; border: none;
+        }
+
+        /* 일반 대사 : 실선(Solid) 및 특정 강조 */
+        .box-solid { 
+            border-top: 1px solid var(--sub);
+            border-left: 4px solid var(--sub);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* 3. 하단 레이아웃 (가변 맵 & 버튼) */
         #bottom-interface {
             display: flex; height: 160px; gap: 10px;
             border-top: 2px solid var(--sub); padding-top: 10px;
         }
 
-        /* 하단 왼쪽: 가변 미니맵 */
+        /* 하단 왼쪽: 가변 미니맵 (6x7) */
         #minimap-sector {
             flex: 0 0 160px; display: flex; align-items: center; justify-content: center;
             border: 1px solid var(--sub); background: rgba(0,0,0,0.4);
         }
         #minimap { display: grid; gap: 2px; }
-        .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.05); }
-        .cell.active { background: var(--theme); box-shadow: 0 0 12px var(--theme); border: none; }
+        .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); }
+        .cell.active { background: var(--theme); box-shadow: 0 0 12px var(--theme); }
 
-        /* 하단 오른쪽: 액션 버튼 (브라켓 디자인) */
+        /* 하단 오른쪽: 액션 버튼 (브라켓 스타일 고수) */
         #action-sector { flex: 1; display: flex; flex-direction: column; gap: 5px; }
         .opt-btn {
             background: none; border: 1px solid var(--sub); color: var(--theme);
             padding: 10px 15px; text-align: left; cursor: pointer;
-            font-family: var(--font-main); font-size: 13px; transition: 0.2s;
+            font-family: var(--font-main); font-size: 13px;
         }
         .opt-btn:hover { background: var(--theme); color: var(--bg); border-color: var(--theme); }
         .opt-btn::before { content: "[ "; }
@@ -83,8 +98,8 @@
 
     <div id="header">
         <div class="title-group">
-            <span id="ui-mode" class="mode-id">LOADING...</span>
-            <span id="ui-title" class="case-title">DREAMCATCHER v3.0.3</span>
+            <span id="ui-mode" class="mode-id">WAITING...</span>
+            <span id="ui-title" class="case-title">DREAMCATCHER v3.0.4</span>
         </div>
         <div class="status-group">
             <div>SYNC: <span id="val-sync">0.0</span>%</div>
@@ -118,7 +133,7 @@
                 initMinimap();
                 playPoint(currentPoint);
             } catch (e) {
-                document.getElementById('log-container').innerHTML = "<div class='msg-box noise-box'>[!] FATAL ERROR: CSV 로드 실패. 서버 상태를 확인하십시오.</div>";
+                console.error(e);
             }
         }
 
@@ -153,16 +168,15 @@
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
             
-            const btnContainer = document.getElementById('action-sector');
-            btnContainer.innerHTML = '';
+            document.getElementById('action-sector').innerHTML = '';
 
             for (const ev of events) {
                 if (ev.Mode) applyTheme(ev.Mode);
                 
-                // 로그 박스 타입 판별
-                let boxType = 'common';
-                if (ev.Content.startsWith('[시스템]') || ev.Content.startsWith('[SYSTEM]')) boxType = 'system';
-                if (ev.Content.startsWith('[!]') || ev.Content.startsWith('[NOISE]')) boxType = 'noise';
+                // 로그 박스 타입 판별 로직
+                let boxType = 'box-solid';
+                if (ev.Content.startsWith('[system]')) boxType = 'box-system';
+                else if (ev.Content.startsWith('[!]') || ev.Content.includes('의뢰인:')) boxType = 'box-filled';
 
                 await typeWriter(ev.Content, boxType);
                 
@@ -174,11 +188,11 @@
             renderButtons(events[events.length - 1]);
         }
 
-        async function typeWriter(text, type) {
+        async function typeWriter(text, boxClass) {
             isTyping = true; shouldSkip = false;
             const container = document.getElementById('log-container');
             const div = document.createElement('div');
-            div.className = `msg-box ${type === 'system' ? 'sys-box' : type === 'noise' ? 'noise-box' : ''}`;
+            div.className = `msg-box ${boxClass}`;
             container.appendChild(div);
 
             for (let char of text) {
@@ -200,17 +214,23 @@
 
         function renderButtons(event) {
             const container = document.getElementById('action-sector');
-            for (let i = 1; i <= 4; i++) {
-                const label = event[`Opt${i}`];
-                const target = event[`T${i}_point`];
-                if (label && label !== "-" && label !== "") {
+            // 버튼은 오직 Opt1~4만 참조하도록 엄격히 분리
+            const opts = [
+                { l: event.Opt1, t: event.T1_point },
+                { l: event.Opt2, t: event.T2_point },
+                { l: event.Opt3, t: event.T3_point },
+                { l: event.Opt4, t: event.T4_point }
+            ];
+
+            opts.forEach(opt => {
+                if (opt.l && opt.l !== "-" && opt.l !== "") {
                     const btn = document.createElement('button');
                     btn.className = 'opt-btn';
-                    btn.innerText = label;
-                    btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
+                    btn.innerText = opt.l.startsWith('>') ? opt.l : `> ${opt.l}`;
+                    btn.onclick = (e) => { e.stopPropagation(); playPoint(opt.t); };
                     container.appendChild(btn);
                 }
-            }
+            });
         }
 
         function applyTheme(modeId) {
