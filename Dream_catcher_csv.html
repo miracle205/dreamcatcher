@@ -3,120 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI HUNTER v3.3.3 - ABSOLUTE GRID</title>
+    <title>DREAMCATCHER v3.2.2 - REPAIR</title>
     <style>
-        :root { --theme: #FF8C00; --bg: #0d0d0d; }
-        
-        /* [핵심] 전체 화면을 부동의 100vh로 고정 */
-        html, body { margin: 0; padding: 0; height: 100vh; overflow: hidden; background: #000; color: var(--theme); font-family: monospace; }
-        
-        #game-container { 
-            width: 100%; max-width: 600px; height: 100vh; margin: 0 auto; 
-            display: flex; flex-direction: column; 
-            border-left: 1px solid var(--theme); border-right: 1px solid var(--theme);
+        :root {
+            --theme: #FF8C00; 
+            --sub: rgba(255, 140, 0, 0.15); 
+            --bg: #0a0a0a;
+            --font-main: 'Courier New', Courier, monospace;
         }
 
-        /* 1. 상단 로그 영역 (정확히 50% 고정) */
-        .top-half { 
-            flex: 0 0 50%; /* 절대 줄어들지도 늘어나지도 않음 */
-            height: 50%; 
-            display: flex; flex-direction: column; 
-            border-bottom: 2px solid var(--theme); 
-            box-sizing: border-box; 
-            overflow: hidden; /* 내부 로그가 밖으로 튀어나오는 것을 방지 */
+        /* [시공] 전체 화면 높이 고정 및 스크롤 방지 */
+        body {
+            background-color: var(--bg); color: var(--theme);
+            font-family: var(--font-main); margin: 0; padding: 0;
+            display: flex; justify-content: center; 
+            height: 100vh; height: -webkit-fill-available; /* 모바일 브라우저 대응 */
+            overflow: hidden; box-sizing: border-box;
         }
-        
-        #header { flex: 0 0 80px; padding: 10px 15px; background: rgba(0,0,0,0.9); }
-        
-        /* 로그창: 여기서만 스크롤이 발생함 */
+
+        #game-container {
+            width: 100%; max-width: 600px; height: 100%;
+            display: flex; flex-direction: column;
+            border-left: 1.5px solid var(--theme); border-right: 1.5px solid var(--theme);
+            background: #0d0d0d; position: relative;
+        }
+
+        /* [시공] 헤더 높이 고정 */
+        #header {
+            flex: 0 0 auto; padding: 12px 15px; border-bottom: 2px solid var(--theme);
+            background: rgba(0, 0, 0, 0.9); z-index: 10;
+        }
+        .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; font-weight: bold; }
+        .case-line { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 2px 0; }
+        .status-row { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7; }
+
+        /* [시공] 로그 컨테이너: 남는 공간을 모두 차지하며 내부 스크롤 */
         #log-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 15px; 
-            display: flex; flex-direction: column; gap: 12px;
-            /* 이전 기록을 보존하기 위해 스크롤만 활성화 */
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column; 
+            gap: 15px; padding: 20px; box-sizing: border-box;
+            scroll-behavior: smooth;
         }
 
-        /* 2. 하단 조작 영역 (정확히 50% 고정) */
-        #bottom-interface { 
-            flex: 0 0 50%; 
-            height: 50%; 
-            display: flex; flex-direction: column; 
-            padding: 15px; box-sizing: border-box; 
-            background: #050505; gap: 10px; 
+        /* 메시지 박스 스타일 유지 */
+        .msg-box { 
+            max-width: 85%; padding: 10px 14px; font-size: 14px; line-height: 1.6;
+            position: relative; animation: slideUp 0.3s ease-out forwards;
+            word-break: keep-all; white-space: pre-wrap;
+        }
+        .box-subject { align-self: flex-start; background: var(--theme); color: #000; font-weight: bold; border-radius: 12px 12px 12px 2px; }
+        .box-me { align-self: flex-end; background: #000; color: var(--theme); border: 1.2px solid var(--theme); border-radius: 12px 12px 2px 12px; }
+        .box-system { align-self: center; width: 90%; background: var(--sub); border: 1px dashed var(--theme); color: var(--theme); filter: brightness(1.3); font-size: 12px; text-align: center; }
+
+        /* [시공] 하단 인터페이스: 전체의 35% 높이 강제 고정 */
+        #bottom-interface {
+            flex: 0 0 35vh; 
+            display: flex; gap: 10px; padding: 12px;
+            border-top: 2px solid var(--theme); background: #050505;
+            box-sizing: border-box;
         }
 
-        #minimap-sector { flex: 1; border: 1.5px solid var(--theme); display: flex; align-items: center; justify-content: center; min-height: 0; }
-        #action-sector { flex: 1.5; display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; min-height: 0; }
+        /* 미니맵: 하단의 4할 차지 */
+        #minimap-sector { 
+            flex: 4; border: 1.5px solid var(--theme); background: #000; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        #minimap { display: grid; gap: 2px; }
+        .cell { width: 14px; height: 14px; background: #1a1a1a; }
+        .cell.active { background: var(--theme); box-shadow: 0 0 8px var(--theme); }
 
-        /* 버튼: 영역 내에서 균등하게 배치 */
-        button { width: 100%; height: 100%; background: transparent; border: 1.2px solid var(--theme); color: var(--theme); font-weight: bold; text-align: left; padding: 0 15px; cursor: pointer; }
-        button:disabled { opacity: 0.15; }
-        
-        /* 말풍선 스타일 (기존 위계 유지) */
-        .msg-box { max-width: 85%; padding: 10px; font-size: 14px; border-radius: 4px; }
-        .box-me { align-self: flex-end; border: 1px solid var(--theme); }
-        .box-subject { align-self: flex-start; background: var(--theme); color: #000 !important; font-weight: bold; }
+        /* 액션 버튼: 하단의 6할 차지 및 4개 균등 분할 */
+        #action-sector { 
+            flex: 6; display: flex; flex-direction: column; 
+            gap: 6px; height: 100%; justify-content: space-between;
+        }
+        button {
+            flex: 1; width: 100%; min-height: 0;
+            background: transparent; border: 1.5px solid var(--theme); 
+            color: var(--theme); text-align: left; padding: 0 12px;
+            font-family: inherit; font-size: 13px; cursor: pointer;
+            font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+        }
+        button:hover:not(:disabled) { background: var(--theme); color: #000; }
+        button:disabled { opacity: 0.1; cursor: default; }
+
+        #log-container::-webkit-scrollbar { width: 3px; }
+        #log-container::-webkit-scrollbar-thumb { background: var(--theme); }
     </style>
 </head>
-<body>
+<body onclick="skipTypewriter()">
     <div id="game-container">
-        <div class="top-half">
-            <div id="header">
-                <div style="font-size: 10px; font-weight: bold;">PROTOCOL: <span id="ui-protocol">INITIALIZING</span></div>
-                <div id="ui-title" style="font-size: 18px; font-weight: bold; margin-top: 5px;">AI HUNTER</div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; margin-top: 5px;">
-                    <span>SYNC: 100.0%</span><span>POINT: <span id="val-point">--</span></span>
-                </div>
+        <div id="header">
+            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL</div>
+            <div id="ui-title" class="case-line">INITIALIZING...</div>
+            <div class="status-row">
+                <span>SYNC: <span id="val-sync">100.0</span>%</span>
+                <span>POINT: <span id="val-point">--</span></span>
             </div>
-            <div id="log-container"></div>
         </div>
+
+        <div id="log-container"></div>
+
         <div id="bottom-interface">
             <div id="minimap-sector"><div id="minimap"></div></div>
             <div id="action-sector">
-                <button id="opt1">[ --- ]</button><button id="opt2">[ --- ]</button>
-                <button id="opt3">[ --- ]</button><button id="opt4">[ --- ]</button>
+                <button id="opt1" disabled>[ --- ]</button>
+                <button id="opt2" disabled>[ --- ]</button>
+                <button id="opt3" disabled>[ --- ]</button>
+                <button id="opt4" disabled>[ --- ]</button>
             </div>
         </div>
     </div>
-
-    <script>
-        // [수정 핵심] playPoint에서 innerHTML = '' 을 삭제하여 로그를 보존함
-        let scenarioData = [], configData = [];
-        let isTyping = false;
-
-        async function playPoint(point) {
-            if (isTyping) return;
-            const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
-            if (events.length === 0) return;
-
-            // 로그 삭제 코드를 제거했습니다. 기록이 차곡차곡 쌓입니다.
-            document.getElementById('val-point').innerText = point;
-            
-            for (const ev of events) {
-                let cls = ev.Content.includes('의뢰인:') ? 'box-subject' : 'box-me';
-                await typeWriter(ev.Content, cls);
-            }
-            updateButtons(events[events.length - 1]);
-        }
-
-        async function typeWriter(text, cls) {
-            isTyping = true;
-            const container = document.getElementById('log-container');
-            const div = document.createElement('div');
-            div.className = `msg-box ${cls}`;
-            container.appendChild(div);
-            
-            for (let char of text) {
-                div.innerText += char;
-                container.scrollTop = container.scrollHeight; // 항상 최신 로그로 스크롤
-                await new Promise(r => setTimeout(r, 20));
-            }
-            isTyping = false;
-        }
-        
-        // (CSV 파싱 및 버튼 로직은 v3.3.1과 동일)
-        window.onload = boot;
-    </script>
-</body>
+    </body>
 </html>
