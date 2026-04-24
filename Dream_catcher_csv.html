@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.1.2 REBOOT</title>
+    <title>DREAMCATCHER v3.1.3 REBOOT</title>
     <style>
         :root {
             --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
@@ -17,7 +17,7 @@
             box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] Header Section */
+        /* [TOP] Header */
         #header {
             border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
@@ -29,11 +29,11 @@
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* [MIDDLE] Log Window - 글씨 사이즈 축소 조정 */
+        /* [MIDDLE] Log Window - 폰트 사이즈 최적화 */
         #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .msg-box { 
             padding: 12px; 
-            font-size: 13.5px; /* 이전보다 작게 조정 */
+            font-size: 13.5px; 
             line-height: 1.5; 
             word-break: keep-all; 
         }
@@ -111,18 +111,18 @@
             } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
         }
 
-        // [v3.1.2] 정교화된 CSV 파서: 헤더 기반 매핑 및 따옴표 보호
+        // [v3.1.3] 띄어쓰기 실종 문제를 수정한 정교한 파서
         function parseCSV(text) {
             const lines = text.trim().split('\n');
             const headers = lines[0].replace('#', '').split(',').map(h => h.trim());
 
             return lines.slice(1).map(line => {
-                // 큰따옴표 안의 쉼표는 보호하고 나머지는 분리하는 정규식
+                // \s 필터를 제거하여 문장 내 공백을 보존
                 const regex = /(".*?"|[^",]+|(?<=,)(?=,)|(?<=^)(?=,)|(?<=,)(?=$))/g;
                 const rawValues = line.match(regex) || [];
+                // trim()은 문장 앞뒤의 불필요한 공백만 제거하고 문장 사이의 공백은 유지함
                 const values = rawValues.map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
 
-                // 헤더 이름을 키로 사용하여 인덱스 밀림 현상 원천 차단
                 return headers.reduce((obj, h, i) => {
                     obj[h] = values[i] || "";
                     return obj;
@@ -173,11 +173,11 @@
                 await typeWriter(text, boxClass);
                 
                 if (ev.Action && ev.Action.includes('SYNC+')) {
-                    syncValue += parseFloat(ev.Action.split('+')[1]);
+                    const add = parseFloat(ev.Action.split('+')[1]);
+                    syncValue += add;
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
                 }
             }
-            // 해당 포인트의 마지막 이벤트 데이터를 기준으로 버튼 업데이트
             updateButtons(events[events.length - 1]);
         }
 
@@ -205,7 +205,6 @@
             if (cell) cell.classList.add('active');
         }
 
-        // [v3.1.2] 명시적 헤더 키 매핑으로 버튼 데이터 추출
         function updateButtons(ev) {
             setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
             setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
@@ -215,7 +214,6 @@
 
         function setBtn(btn, label, target) {
             if (label && label !== "-" && label !== "" && label !== " ") {
-                // 라벨이 너무 길거나 '>'가 없으면 보정하는 로직 포함 가능
                 btn.innerText = label.startsWith('>') ? label : `> ${label}`;
                 btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
