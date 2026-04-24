@@ -3,30 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.0.9</title>
+    <title>DREAMCATCHER v3.1.0 REBOOT</title>
     <style>
         :root {
-            --theme: #FF8C00;
-            --sub: #804600;
-            --bg: #0B0500;
+            --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
             --font-main: 'Courier New', Courier, monospace;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--theme);
-            font-family: var(--font-main);
-            margin: 0; padding: 10px;
-            display: flex; flex-direction: column;
-            height: 100vh; box-sizing: border-box;
-            overflow: hidden;
-            transition: background 0.5s, color 0.5s;
+            background-color: var(--bg); color: var(--theme);
+            font-family: var(--font-main); margin: 0; padding: 10px;
+            display: flex; flex-direction: column; height: 100vh;
+            box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] 스크린샷 기반 상단 레이아웃 */
+        /* [TOP] Header - 스크린샷 위계 재현 */
         #header {
-            border-bottom: 2px solid var(--sub);
-            padding-bottom: 8px; margin-bottom: 12px;
+            border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
         }
         .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
@@ -36,40 +29,35 @@
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* [MIDDLE] 로그창 3종 폼 */
-        #log-container {
-            flex: 1; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 12px;
-            padding-right: 5px;
-        }
+        /* [MIDDLE] Log Window - 3종 박스 폼 */
+        #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .msg-box { padding: 14px; font-size: 15px; line-height: 1.6; word-break: keep-all; }
         
-        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); color: var(--theme); opacity: 0.9; }
+        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); opacity: 0.9; }
         .box-filled { background: var(--theme); color: var(--bg); font-weight: bold; }
         .box-solid { border-left: 5px solid var(--sub); border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255, 255, 255, 0.02); }
 
-        /* [BOTTOM] 하단 인터페이스 */
+        /* [BOTTOM] Control Interface */
         #bottom-interface {
-            display: flex; height: 165px; gap: 12px;
+            display: flex; height: 170px; gap: 12px;
             border-top: 2px solid var(--sub); padding-top: 12px;
         }
-
         #minimap-sector {
-            flex: 0 0 160px; display: flex; align-items: center; justify-content: center;
-            border: 1px solid var(--sub); background: rgba(0,0,0,0.5);
+            flex: 0 0 160px; border: 1px solid var(--sub); 
+            display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);
         }
         #minimap { display: grid; gap: 2px; }
         .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); }
         .cell.active { background: var(--theme); box-shadow: 0 0 15px var(--theme); }
 
-        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .opt-btn {
+        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+        button {
             background: none; border: 1.5px solid var(--sub); color: var(--theme);
-            padding: 12px 15px; text-align: left; cursor: pointer;
-            font-family: var(--font-main); font-size: 14px; font-weight: bold;
+            padding: 10px 15px; text-align: left; cursor: pointer;
+            font-family: inherit; font-size: 14px; font-weight: bold;
         }
-        .opt-btn:hover { background: var(--theme); color: var(--bg); }
-        .opt-btn::before { content: "[ "; } .opt-btn::after { content: " ]"; float: right; }
+        button:hover:not(:disabled) { background: var(--theme); color: var(--bg); }
+        button:disabled { opacity: 0.2; cursor: default; }
     </style>
 </head>
 <body onclick="skipTypewriter()">
@@ -89,14 +77,18 @@
 
     <div id="bottom-interface">
         <div id="minimap-sector"><div id="minimap"></div></div>
-        <div id="action-sector"></div>
+        <div id="action-sector">
+            <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
+            <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
+            <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
+            <button id="opt4" onclick="handleOption(4)">[ --- ]</button>
+        </div>
     </div>
 
     <script>
         let scenarioData = [], configData = [];
-        let currentPoint = "1-1", syncValue = 100.0, currentMode = "";
+        let currentPoint = "1-1", currentMode = "", syncValue = 100.0;
         let isTyping = false, shouldSkip = false;
-        const MAP_W = 6, MAP_H = 7;
 
         async function boot() {
             try {
@@ -108,9 +100,9 @@
                 scenarioData = parseCSV(sRes);
                 
                 initMinimap();
-                applyTitle(); // TITLE 행 선제 처리
+                loadTitle(); // TITLE 행 선행 처리
                 playPoint(currentPoint);
-            } catch (e) { console.error("FATAL_ERROR: DATA LOAD FAILED"); }
+            } catch (e) { console.error("BOOT_ERR"); }
         }
 
         function parseCSV(text) {
@@ -122,63 +114,55 @@
             });
         }
 
-        // TITLE 행만 먼저 읽어 상단 UI 초기화
-        function applyTitle() {
-            const titleRow = scenarioData.find(r => r.point === 'TITLE');
-            if (titleRow) {
-                document.getElementById('ui-title').innerText = titleRow.Content;
-                if (titleRow.Mode) applyTheme(titleRow.Mode);
+        function loadTitle() {
+            const row = scenarioData.find(r => r.point === 'TITLE');
+            if (row) {
+                document.getElementById('ui-title').innerText = row.Content;
+                if (row.Mode) applyTheme(row.Mode);
             }
         }
 
         function initMinimap() {
             const map = document.getElementById('minimap');
-            map.style.gridTemplateColumns = `repeat(${MAP_W}, 1fr)`;
-            for (let y = 1; y <= MAP_H; y++) {
-                for (let x = 1; x <= MAP_W; x++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell'; cell.id = `p-${x}-${y}`;
-                    map.appendChild(cell);
-                }
+            map.style.gridTemplateColumns = `repeat(6, 1fr)`;
+            for (let i = 0; i < 42; i++) { // 6x7
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
+                cell.id = `p-${x}-${y}`;
+                map.appendChild(cell);
             }
         }
 
         async function playPoint(point) {
             if (isTyping) return;
-            // TITLE 행은 실행에서 제외
             const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
             if (events.length === 0) return;
 
             currentPoint = point;
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
-            document.getElementById('action-sector').innerHTML = ''; 
 
             for (const ev of events) {
                 if (ev.Mode) applyTheme(ev.Mode);
                 
                 let boxClass = 'box-solid';
-                let content = ev.Content || "";
+                let text = ev.Content || "";
                 
-                // [시스템] -> [system] 자동 변환 및 스타일링
-                if (content.includes('[시스템]') || content.toLowerCase().includes('[system]')) {
-                    content = content.replace('[시스템]', '[system]');
+                if (text.includes('[시스템]')) {
+                    text = text.replace('[시스템]', '[system]');
                     boxClass = 'box-system';
-                } else if (content.startsWith('[!]') || content.includes('의뢰인:')) {
+                } else if (text.startsWith('[!]') || text.includes('의뢰인:')) {
                     boxClass = 'box-filled';
                 }
 
-                await typeWriter(content, boxClass);
-                
+                await typeWriter(text, boxClass);
                 if (ev.Action && ev.Action.includes('SYNC+')) {
                     syncValue += parseFloat(ev.Action.split('+')[1]);
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
                 }
             }
-            
-            // v2.7.6의 안정적 구조 채택: 마지막 행에서 명확하게 Opt 필드만 추출
-            const finalRow = events[events.length - 1];
-            updateButtons(finalRow);
+            updateButtons(events[events.length - 1]);
         }
 
         async function typeWriter(text, boxClass) {
@@ -205,25 +189,26 @@
             if (cell) cell.classList.add('active');
         }
 
-        // v2.7.6 방식 환원: 열 이름을 직접 지칭하여 데이터 오염 차단
+        // [v2.7.6 방식 하드코딩] - 데이터 오염 원천 봉쇄
         function updateButtons(ev) {
-            const container = document.getElementById('action-sector');
-            container.innerHTML = ''; 
+            const b1 = document.getElementById('opt1'), b2 = document.getElementById('opt2');
+            const b3 = document.getElementById('opt3'), b4 = document.getElementById('opt4');
 
-            for (let i = 1; i <= 4; i++) {
-                const label = ev[`Opt${i}`];
-                const target = ev[`T${i}_point`];
+            setBtn(b1, ev.Opt1, ev.T1_point);
+            setBtn(b2, ev.Opt2, ev.T2_point);
+            setBtn(b3, ev.Opt3, ev.T3_point);
+            setBtn(b4, ev.Opt4, ev.T4_point);
+        }
 
-                if (label && label !== "-" && label !== "") {
-                    const btn = document.createElement('button');
-                    btn.className = 'opt-btn';
-                    btn.innerText = label.startsWith('>') ? label : `> ${label}`;
-                    btn.onclick = (e) => { 
-                        e.stopPropagation(); 
-                        if (target && target !== "-") playPoint(target); 
-                    };
-                    container.appendChild(btn);
-                }
+        function setBtn(btn, label, target) {
+            if (label && label !== "-" && label !== "") {
+                btn.innerText = label.startsWith('>') ? label : `> ${label}`;
+                btn.disabled = false;
+                btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
+            } else {
+                btn.innerText = "[ --- ]";
+                btn.disabled = true;
+                btn.onclick = null;
             }
         }
 
@@ -237,7 +222,6 @@
             r.setProperty('--sub', cfg.SubColor);
             r.setProperty('--bg', cfg.BGColor);
 
-            // 상단 단계 텍스트 (M1~M3 줄기 준수)
             let protocol = "DREAMCATCHER PROTOCOL - ";
             if (modeId === "M1") protocol += "INITIAL INQUIRY";
             else if (modeId === "M2") protocol += "NEURAL DIVING";
