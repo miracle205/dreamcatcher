@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER PROTOCOL v3.0.1</title>
+    <title>DREAMCATCHER PROTOCOL v3.0.3</title>
     <style>
         :root {
             --theme: #FF8C00;
@@ -16,62 +16,63 @@
             background-color: var(--bg);
             color: var(--theme);
             font-family: var(--font-main);
-            margin: 0; padding: 15px;
+            margin: 0; padding: 10px;
             display: flex; flex-direction: column;
             height: 100vh; box-sizing: border-box;
             overflow: hidden;
             transition: all 0.5s ease;
         }
 
-        /* --- 1. 상단 레이아웃 (수치 및 타이틀) --- */
+        /* 1. 상단 레이아웃 (수치 및 타이틀) */
         #header {
             display: flex; justify-content: space-between; align-items: flex-end;
-            border-bottom: 1px solid var(--sub);
-            padding-bottom: 8px; margin-bottom: 10px;
+            border-bottom: 2px solid var(--sub);
+            padding-bottom: 5px; margin-bottom: 8px;
         }
-        .title-group { display: flex; flex-direction: column; }
-        .mode-id { font-size: 10px; opacity: 0.6; letter-spacing: 2px; }
-        .case-title { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
-        .status-group { text-align: right; font-size: 12px; line-height: 1.4; }
+        .title-group { display: flex; flex-direction: column; gap: 2px; }
+        .mode-id { font-size: 9px; opacity: 0.6; letter-spacing: 2px; }
+        .case-title { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+        .status-group { text-align: right; font-size: 11px; line-height: 1.2; }
 
-        /* --- 2. 중앙 레이아웃 (로그창) --- */
+        /* 2. 중앙 로그창 (공백 최소화 및 박스 아키텍처) */
         #log-container {
             flex: 1; overflow-y: auto;
-            margin-bottom: 15px; padding-right: 10px;
+            margin-bottom: 12px; padding-right: 5px;
             scrollbar-width: thin; scrollbar-color: var(--sub) transparent;
         }
-        #log-container::-webkit-scrollbar { width: 4px; }
-        #log-container::-webkit-scrollbar-thumb { background: var(--sub); }
+        
+        /* 로그 박스 3종 세트 복원 */
+        .msg-box { 
+            margin-bottom: 10px; padding: 12px; 
+            border: 1px solid var(--sub); 
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 14px; line-height: 1.5;
+            word-break: keep-all;
+        }
+        .sys-box { border-style: dashed; opacity: 0.8; color: #ccc; background: rgba(255, 255, 255, 0.05); }
+        .noise-box { border-color: #ff0033 !important; color: #ff0033 !important; background: rgba(255, 0, 51, 0.1); font-weight: bold; }
 
-        .msg-box { margin-bottom: 12px; line-height: 1.6; font-size: 15px; word-break: keep-all; }
-        .sys-msg { color: #fff; opacity: 0.9; }
-        .cursor { display: inline-block; width: 8px; height: 15px; background: var(--theme); animation: blink 1s infinite; margin-left: 5px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        /* --- 3. 하단 레이아웃 (맵 & 버튼) --- */
+        /* 3. 하단 레이아웃 (가변 맵 & 버튼 분리) */
         #bottom-interface {
-            display: flex; height: 160px; gap: 15px;
-            border-top: 1px solid var(--sub); padding-top: 15px;
+            display: flex; height: 160px; gap: 10px;
+            border-top: 2px solid var(--sub); padding-top: 10px;
         }
 
-        /* 가변 미니맵 (6x7) */
+        /* 하단 왼쪽: 가변 미니맵 */
         #minimap-sector {
-            flex: 0 0 140px; display: flex; align-items: center; justify-content: center;
-            border: 1px solid var(--sub); background: rgba(0,0,0,0.2);
+            flex: 0 0 160px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--sub); background: rgba(0,0,0,0.4);
         }
-        #minimap {
-            display: grid; gap: 2px;
-        }
-        .cell { width: 16px; height: 16px; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.05); }
-        .cell.active { background: var(--theme); box-shadow: 0 0 10px var(--theme); border: none; }
+        #minimap { display: grid; gap: 2px; }
+        .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.05); }
+        .cell.active { background: var(--theme); box-shadow: 0 0 12px var(--theme); border: none; }
 
-        /* 액션 버튼 */
-        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        /* 하단 오른쪽: 액션 버튼 (브라켓 디자인) */
+        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 5px; }
         .opt-btn {
             background: none; border: 1px solid var(--sub); color: var(--theme);
             padding: 10px 15px; text-align: left; cursor: pointer;
-            font-family: var(--font-main); font-size: 14px; transition: 0.2s;
-            position: relative;
+            font-family: var(--font-main); font-size: 13px; transition: 0.2s;
         }
         .opt-btn:hover { background: var(--theme); color: var(--bg); border-color: var(--theme); }
         .opt-btn::before { content: "[ "; }
@@ -82,11 +83,11 @@
 
     <div id="header">
         <div class="title-group">
-            <span id="ui-mode" class="mode-id">INITIALIZING...</span>
-            <span id="ui-title" class="case-title">CASE: Dive 01</span>
+            <span id="ui-mode" class="mode-id">LOADING...</span>
+            <span id="ui-title" class="case-title">DREAMCATCHER v3.0.3</span>
         </div>
         <div class="status-group">
-            <div>SYNC: <span id="val-sync">100.0</span>%</div>
+            <div>SYNC: <span id="val-sync">0.0</span>%</div>
             <div>POINT: <span id="val-point">--</span></div>
         </div>
     </div>
@@ -104,8 +105,6 @@
         let scenarioData = [], configData = [];
         let currentPoint = "1-1", syncValue = 100.0, currentMode = "";
         let isTyping = false, shouldSkip = false;
-        
-        // 가변 맵 설정 (6x7)
         const MAP_W = 6, MAP_H = 7;
 
         async function boot() {
@@ -116,11 +115,10 @@
                 ]);
                 configData = parseCSV(cRes);
                 scenarioData = parseCSV(sRes);
-                
                 initMinimap();
                 playPoint(currentPoint);
             } catch (e) {
-                document.getElementById('log-container').innerText = "FATAL: 로컬 서버에서 CSV 파일을 로드할 수 없습니다.";
+                document.getElementById('log-container').innerHTML = "<div class='msg-box noise-box'>[!] FATAL ERROR: CSV 로드 실패. 서버 상태를 확인하십시오.</div>";
             }
         }
 
@@ -140,29 +138,34 @@
             for (let y = 1; y <= MAP_H; y++) {
                 for (let x = 1; x <= MAP_W; x++) {
                     const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.id = `p-${x}-${y}`;
+                    cell.className = 'cell'; cell.id = `p-${x}-${y}`;
                     map.appendChild(cell);
                 }
             }
         }
 
         async function playPoint(point) {
+            if (isTyping) return;
             const events = scenarioData.filter(r => r.point === point);
             if (events.length === 0) return;
 
             currentPoint = point;
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
-
+            
             const btnContainer = document.getElementById('action-sector');
-            btnContainer.innerHTML = ''; // 버튼 초기화
+            btnContainer.innerHTML = '';
 
             for (const ev of events) {
                 if (ev.Mode) applyTheme(ev.Mode);
-                await typeWriter(ev.Content, ev.Content.startsWith('['));
                 
-                // Action 처리
+                // 로그 박스 타입 판별
+                let boxType = 'common';
+                if (ev.Content.startsWith('[시스템]') || ev.Content.startsWith('[SYSTEM]')) boxType = 'system';
+                if (ev.Content.startsWith('[!]') || ev.Content.startsWith('[NOISE]')) boxType = 'noise';
+
+                await typeWriter(ev.Content, boxType);
+                
                 if (ev.Action && ev.Action.includes('SYNC+')) {
                     syncValue += parseInt(ev.Action.split('+')[1]);
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
@@ -171,26 +174,11 @@
             renderButtons(events[events.length - 1]);
         }
 
-        function applyTheme(modeId) {
-            if (currentMode === modeId) return;
-            const cfg = configData.find(c => c.ID === modeId);
-            if (cfg) {
-                const r = document.documentElement.style;
-                r.setProperty('--theme', cfg.ThemeColor);
-                r.setProperty('--sub', cfg.SubColor);
-                r.setProperty('--bg', cfg.BGColor);
-                document.getElementById('ui-mode').innerText = cfg.ID;
-                document.getElementById('ui-title').innerText = cfg.Title;
-                window.typeSpeed = parseInt(cfg.Speed) || 30;
-                currentMode = modeId;
-            }
-        }
-
-        async function typeWriter(text, isSystem) {
+        async function typeWriter(text, type) {
             isTyping = true; shouldSkip = false;
             const container = document.getElementById('log-container');
             const div = document.createElement('div');
-            div.className = `msg-box ${isSystem ? 'sys-msg' : ''}`;
+            div.className = `msg-box ${type === 'system' ? 'sys-box' : type === 'noise' ? 'noise-box' : ''}`;
             container.appendChild(div);
 
             for (let char of text) {
@@ -215,13 +203,28 @@
             for (let i = 1; i <= 4; i++) {
                 const label = event[`Opt${i}`];
                 const target = event[`T${i}_point`];
-                if (label && label !== "-") {
+                if (label && label !== "-" && label !== "") {
                     const btn = document.createElement('button');
                     btn.className = 'opt-btn';
                     btn.innerText = label;
                     btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
                     container.appendChild(btn);
                 }
+            }
+        }
+
+        function applyTheme(modeId) {
+            if (currentMode === modeId) return;
+            const cfg = configData.find(c => c.ID === modeId);
+            if (cfg) {
+                const r = document.documentElement.style;
+                r.setProperty('--theme', cfg.ThemeColor);
+                r.setProperty('--sub', cfg.SubColor);
+                r.setProperty('--bg', cfg.BGColor);
+                document.getElementById('ui-mode').innerText = cfg.ID;
+                document.getElementById('ui-title').innerText = cfg.Title;
+                window.typeSpeed = parseInt(cfg.Speed) || 30;
+                currentMode = modeId;
             }
         }
 
