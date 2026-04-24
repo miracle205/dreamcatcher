@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.1.0 REBOOT</title>
+    <title>DREAMCATCHER v3.1.1 REBOOT</title>
     <style>
         :root {
             --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
@@ -17,7 +17,7 @@
             box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] Header - 스크린샷 위계 재현 */
+        /* [TOP] 스크린샷 기반 상단 레이아웃 */
         #header {
             border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
@@ -29,7 +29,7 @@
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* [MIDDLE] Log Window - 3종 박스 폼 */
+        /* [MIDDLE] 로그창 3종 폼 */
         #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .msg-box { padding: 14px; font-size: 15px; line-height: 1.6; word-break: keep-all; }
         
@@ -37,7 +37,7 @@
         .box-filled { background: var(--theme); color: var(--bg); font-weight: bold; }
         .box-solid { border-left: 5px solid var(--sub); border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255, 255, 255, 0.02); }
 
-        /* [BOTTOM] Control Interface */
+        /* [BOTTOM] 하단 인터페이스 */
         #bottom-interface {
             display: flex; height: 170px; gap: 12px;
             border-top: 2px solid var(--sub); padding-top: 12px;
@@ -53,11 +53,11 @@
         #action-sector { flex: 1; display: flex; flex-direction: column; gap: 7px; }
         button {
             background: none; border: 1.5px solid var(--sub); color: var(--theme);
-            padding: 10px 15px; text-align: left; cursor: pointer;
+            padding: 11px 15px; text-align: left; cursor: pointer;
             font-family: inherit; font-size: 14px; font-weight: bold;
         }
-        button:hover:not(:disabled) { background: var(--theme); color: var(--bg); }
-        button:disabled { opacity: 0.2; cursor: default; }
+        button:hover:not(:disabled) { background: var(--theme); color: var(--bg); border-color: var(--theme); }
+        button:disabled { opacity: 0.15; cursor: default; }
     </style>
 </head>
 <body onclick="skipTypewriter()">
@@ -100,9 +100,9 @@
                 scenarioData = parseCSV(sRes);
                 
                 initMinimap();
-                loadTitle(); // TITLE 행 선행 처리
+                applyTitleConfig(); // TITLE 행에서 제목과 모드 로드
                 playPoint(currentPoint);
-            } catch (e) { console.error("BOOT_ERR"); }
+            } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
         }
 
         function parseCSV(text) {
@@ -114,18 +114,19 @@
             });
         }
 
-        function loadTitle() {
+        // TITLE 행 처리: AreaID 칸에서 모드를, Content 칸에서 제목을 읽음
+        function applyTitleConfig() {
             const row = scenarioData.find(r => r.point === 'TITLE');
             if (row) {
                 document.getElementById('ui-title').innerText = row.Content;
-                if (row.Mode) applyTheme(row.Mode);
+                if (row.AreaID) applyTheme(row.AreaID); // AreaID에 적힌 M1, M2 등을 읽음
             }
         }
 
         function initMinimap() {
             const map = document.getElementById('minimap');
             map.style.gridTemplateColumns = `repeat(6, 1fr)`;
-            for (let i = 0; i < 42; i++) { // 6x7
+            for (let i = 0; i < 42; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
@@ -144,8 +145,6 @@
             updateMinimap(point);
 
             for (const ev of events) {
-                if (ev.Mode) applyTheme(ev.Mode);
-                
                 let boxClass = 'box-solid';
                 let text = ev.Content || "";
                 
@@ -157,6 +156,7 @@
                 }
 
                 await typeWriter(text, boxClass);
+                
                 if (ev.Action && ev.Action.includes('SYNC+')) {
                     syncValue += parseFloat(ev.Action.split('+')[1]);
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
@@ -189,15 +189,12 @@
             if (cell) cell.classList.add('active');
         }
 
-        // [v2.7.6 방식 하드코딩] - 데이터 오염 원천 봉쇄
+        // [v2.7.6 방식 하드코딩] - 데이터 오염 방지
         function updateButtons(ev) {
-            const b1 = document.getElementById('opt1'), b2 = document.getElementById('opt2');
-            const b3 = document.getElementById('opt3'), b4 = document.getElementById('opt4');
-
-            setBtn(b1, ev.Opt1, ev.T1_point);
-            setBtn(b2, ev.Opt2, ev.T2_point);
-            setBtn(b3, ev.Opt3, ev.T3_point);
-            setBtn(b4, ev.Opt4, ev.T4_point);
+            setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
+            setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
+            setBtn(document.getElementById('opt3'), ev.Opt3, ev.T3_point);
+            setBtn(document.getElementById('opt4'), ev.Opt4, ev.T4_point);
         }
 
         function setBtn(btn, label, target) {
