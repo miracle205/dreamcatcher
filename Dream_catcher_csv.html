@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.1.1 REBOOT</title>
+    <title>DREAMCATCHER v3.1.2 REBOOT</title>
     <style>
         :root {
             --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
@@ -17,27 +17,32 @@
             box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] 스크린샷 기반 상단 레이아웃 */
+        /* [TOP] Header Section */
         #header {
             border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
             display: flex; flex-direction: column; gap: 4px;
         }
         .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
-        .case-line { font-size: 20px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .case-line { font-size: 19px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
         .status-row { 
             display: flex; gap: 15px; font-size: 11px; 
             border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
         }
 
-        /* [MIDDLE] 로그창 3종 폼 */
-        #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg-box { padding: 14px; font-size: 15px; line-height: 1.6; word-break: keep-all; }
+        /* [MIDDLE] Log Window - 글씨 사이즈 축소 조정 */
+        #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg-box { 
+            padding: 12px; 
+            font-size: 13.5px; /* 이전보다 작게 조정 */
+            line-height: 1.5; 
+            word-break: keep-all; 
+        }
         
-        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); opacity: 0.9; }
+        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); opacity: 0.8; }
         .box-filled { background: var(--theme); color: var(--bg); font-weight: bold; }
-        .box-solid { border-left: 5px solid var(--sub); border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255, 255, 255, 0.02); }
+        .box-solid { border-left: 4px solid var(--sub); background: rgba(255, 255, 255, 0.02); }
 
-        /* [BOTTOM] 하단 인터페이스 */
+        /* [BOTTOM] Control Interface */
         #bottom-interface {
             display: flex; height: 170px; gap: 12px;
             border-top: 2px solid var(--sub); padding-top: 12px;
@@ -48,13 +53,14 @@
         }
         #minimap { display: grid; gap: 2px; }
         .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); }
-        .cell.active { background: var(--theme); box-shadow: 0 0 15px var(--theme); }
+        .cell.active { background: var(--theme); box-shadow: 0 0 12px var(--theme); }
 
-        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         button {
             background: none; border: 1.5px solid var(--sub); color: var(--theme);
-            padding: 11px 15px; text-align: left; cursor: pointer;
-            font-family: inherit; font-size: 14px; font-weight: bold;
+            padding: 10px 14px; text-align: left; cursor: pointer;
+            font-family: inherit; font-size: 13px; font-weight: bold;
+            transition: all 0.2s;
         }
         button:hover:not(:disabled) { background: var(--theme); color: var(--bg); border-color: var(--theme); }
         button:disabled { opacity: 0.15; cursor: default; }
@@ -100,26 +106,35 @@
                 scenarioData = parseCSV(sRes);
                 
                 initMinimap();
-                applyTitleConfig(); // TITLE 행에서 제목과 모드 로드
+                applyTitleConfig();
                 playPoint(currentPoint);
             } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
         }
 
+        // [v3.1.2] 정교화된 CSV 파서: 헤더 기반 매핑 및 따옴표 보호
         function parseCSV(text) {
             const lines = text.trim().split('\n');
             const headers = lines[0].replace('#', '').split(',').map(h => h.trim());
+
             return lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] }), {});
+                // 큰따옴표 안의 쉼표는 보호하고 나머지는 분리하는 정규식
+                const regex = /(".*?"|[^",]+|(?<=,)(?=,)|(?<=^)(?=,)|(?<=,)(?=$))/g;
+                const rawValues = line.match(regex) || [];
+                const values = rawValues.map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+
+                // 헤더 이름을 키로 사용하여 인덱스 밀림 현상 원천 차단
+                return headers.reduce((obj, h, i) => {
+                    obj[h] = values[i] || "";
+                    return obj;
+                }, {});
             });
         }
 
-        // TITLE 행 처리: AreaID 칸에서 모드를, Content 칸에서 제목을 읽음
         function applyTitleConfig() {
             const row = scenarioData.find(r => r.point === 'TITLE');
             if (row) {
                 document.getElementById('ui-title').innerText = row.Content;
-                if (row.AreaID) applyTheme(row.AreaID); // AreaID에 적힌 M1, M2 등을 읽음
+                if (row.AreaID) applyTheme(row.AreaID);
             }
         }
 
@@ -162,6 +177,7 @@
                     document.getElementById('val-sync').innerText = syncValue.toFixed(1);
                 }
             }
+            // 해당 포인트의 마지막 이벤트 데이터를 기준으로 버튼 업데이트
             updateButtons(events[events.length - 1]);
         }
 
@@ -189,7 +205,7 @@
             if (cell) cell.classList.add('active');
         }
 
-        // [v2.7.6 방식 하드코딩] - 데이터 오염 방지
+        // [v3.1.2] 명시적 헤더 키 매핑으로 버튼 데이터 추출
         function updateButtons(ev) {
             setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
             setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
@@ -198,7 +214,8 @@
         }
 
         function setBtn(btn, label, target) {
-            if (label && label !== "-" && label !== "") {
+            if (label && label !== "-" && label !== "" && label !== " ") {
+                // 라벨이 너무 길거나 '>'가 없으면 보정하는 로직 포함 가능
                 btn.innerText = label.startsWith('>') ? label : `> ${label}`;
                 btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
