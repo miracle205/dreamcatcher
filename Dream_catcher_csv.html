@@ -3,92 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.1.4 REBOOT</title>
+    <title>DREAMCATCHER v3.2.0 REBOOT</title>
     <style>
         :root {
-            --theme: #FF8C00; --sub: #804600; --bg: #0B0500;
+            /* 초기 컨셉의 순수 색상값 복구 */
+            --theme: #FF8C00; 
+            --sub: #804600; 
+            --bg: #0a0a0a;
             --font-main: 'Courier New', Courier, monospace;
         }
 
         body {
             background-color: var(--bg); color: var(--theme);
-            font-family: var(--font-main); margin: 0; padding: 10px;
-            display: flex; flex-direction: column; height: 100vh;
+            font-family: var(--font-main); margin: 0; padding: 0;
+            display: flex; justify-content: center; height: 100vh;
             box-sizing: border-box; overflow: hidden;
         }
 
-        /* [TOP] Header Section */
+        #game-container {
+            width: 100%; max-width: 600px; height: 100%;
+            display: flex; flex-direction: column;
+            border-left: 1px solid var(--theme); border-right: 1px solid var(--theme);
+            background: #111; position: relative;
+        }
+
+        /* [TOP] Header Section - 초기 컨셉 스타일 */
         #header {
-            border-bottom: 2px solid var(--sub); padding-bottom: 8px; margin-bottom: 12px;
-            display: flex; flex-direction: column; gap: 4px;
+            flex: 0 0 auto; padding: 15px; border-bottom: 2px solid var(--theme);
+            background: #1a0f00; display: flex; flex-direction: column; gap: 4px;
         }
-        .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.7; font-weight: bold; }
-        .case-line { font-size: 19px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; font-weight: bold; }
+        .case-line { font-size: 20px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
         .status-row { 
-            display: flex; gap: 15px; font-size: 11px; 
-            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 4px;
+            display: flex; justify-content: space-between; font-size: 11px; 
+            border-top: 1px solid rgba(255, 140, 0, 0.2); padding-top: 8px; margin-top: 5px;
         }
 
-        /* [MIDDLE] Log Window - 폰트 사이즈 및 가독성 최적화 */
-        #log-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        /* [MIDDLE] Log Window - 6:4 비율 및 애니메이션 */
+        #log-container { 
+            flex: 6; overflow-y: auto; display: flex; flex-direction: column; 
+            gap: 15px; padding: 20px; box-sizing: border-box;
+        }
+
+        /* 대화 박스 공통 스타일 - 초기 컨셉 이식 */
         .msg-box { 
-            padding: 12px; 
-            font-size: 13.5px; 
-            line-height: 1.5; 
-            word-break: keep-all; 
-            white-space: pre-wrap; /* 공백 및 줄바꿈 보존 */
+            max-width: 85%; padding: 12px 16px; font-size: 14px; line-height: 1.6;
+            position: relative; animation: slideUp 0.4s ease-out forwards;
+            word-break: keep-all; white-space: pre-wrap;
         }
-        
-        .box-system { border: 1px dashed var(--sub); background: rgba(255, 255, 255, 0.03); opacity: 0.8; }
-        .box-filled { background: var(--theme); color: var(--bg); font-weight: bold; }
-        .box-solid { border-left: 4px solid var(--sub); background: rgba(255, 255, 255, 0.02); }
 
-        /* [BOTTOM] Control Interface */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 박스 타입별 스타일 */
+        .box-solid { /* 다이버/나 */
+            align-self: flex-end; background: var(--theme); color: #000;
+            font-weight: bold; border-radius: 15px 15px 2px 15px;
+        }
+        .box-filled { /* 의뢰인/상대 */
+            align-self: flex-start; background: #331a00; color: var(--theme);
+            border: 1px solid var(--theme); border-radius: 15px 15px 15px 2px;
+        }
+        .box-system { /* 시스템 로그 */
+            align-self: center; width: 90%; background: transparent; 
+            border: 1px dashed var(--sub); color: var(--theme); 
+            font-size: 12px; text-align: center; opacity: 0.8;
+        }
+
+        /* 커서 깜빡임 효과 */
+        .cursor {
+            display: inline-block; width: 8px; height: 15px;
+            background: currentColor; margin-left: 4px;
+            animation: blink 0.8s infinite; vertical-align: middle;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* [BOTTOM] Control Interface - 40% 비율 */
         #bottom-interface {
-            display: flex; height: 170px; gap: 12px;
-            border-top: 2px solid var(--sub); padding-top: 12px;
+            flex: 4; display: flex; gap: 12px; padding: 15px;
+            border-top: 2px solid var(--theme); background: #050505;
         }
-        #minimap-sector {
-            flex: 0 0 160px; border: 1px solid var(--sub); 
-            display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);
-        }
-        #minimap { display: grid; gap: 2px; }
-        .cell { width: 18px; height: 18px; background: rgba(255,255,255,0.05); }
-        .cell.active { background: var(--theme); box-shadow: 0 0 12px var(--theme); }
 
-        #action-sector { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-        button {
-            background: none; border: 1.5px solid var(--sub); color: var(--theme);
-            padding: 10px 14px; text-align: left; cursor: pointer;
-            font-family: inherit; font-size: 13px; font-weight: bold;
-            transition: all 0.1s;
+        #minimap-sector {
+            flex: 4; border: 1px solid var(--sub); 
+            display: flex; align-items: center; justify-content: center; 
+            background: #000;
         }
-        button:hover:not(:disabled) { background: var(--theme); color: var(--bg); border-color: var(--theme); }
-        button:disabled { opacity: 0.15; cursor: default; }
+        #minimap { display: grid; gap: 3px; }
+        .cell { width: 18px; height: 18px; background: #222; border-radius: 1px; }
+        .cell.active { background: var(--theme); box-shadow: 0 0 10px var(--theme); }
+
+        #action-sector { flex: 6; display: flex; flex-direction: column; gap: 8px; }
+        button {
+            flex: 1; background: transparent; border: 1px solid var(--theme); 
+            color: var(--theme); text-align: left; padding: 0 15px;
+            font-family: inherit; font-size: 14px; cursor: pointer;
+            transition: all 0.2s; font-weight: bold;
+        }
+        button:hover:not(:disabled) { background: var(--theme); color: #000; }
+        button:disabled { opacity: 0.1; cursor: default; }
     </style>
 </head>
 <body onclick="skipTypewriter()">
 
-    <div id="header">
-        <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL - INITIALIZING...</div>
-        <div id="ui-title" class="case-line">CASE: SYNCING...</div>
-        <div class="status-row">
-            <span>SYNC: <span id="val-sync">100.0</span>%</span>
-            <span>CLEAN: 100%</span>
-            <span>STRESS: 0%</span>
-            <span style="margin-left:auto">POINT: <span id="val-point">--</span></span>
+    <div id="game-container">
+        <div id="header">
+            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL - INITIALIZING...</div>
+            <div id="ui-title" class="case-line">CASE: SYNCING...</div>
+            <div class="status-row">
+                <span>SYNC: <span id="val-sync">100.0</span>%</span>
+                <span>POINT: <span id="val-point">--</span></span>
+            </div>
         </div>
-    </div>
 
-    <div id="log-container"></div>
+        <div id="log-container"></div>
 
-    <div id="bottom-interface">
-        <div id="minimap-sector"><div id="minimap"></div></div>
-        <div id="action-sector">
-            <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
-            <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
-            <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
-            <button id="opt4" onclick="handleOption(4)">[ --- ]</button>
+        <div id="bottom-interface">
+            <div id="minimap-sector"><div id="minimap"></div></div>
+            <div id="action-sector">
+                <button id="opt1" onclick="handleOption(1)">[ --- ]</button>
+                <button id="opt2" onclick="handleOption(2)">[ --- ]</button>
+                <button id="opt3" onclick="handleOption(3)">[ --- ]</button>
+                <button id="opt4" onclick="handleOption(4)">[ --- ]</button>
+            </div>
         </div>
     </div>
 
@@ -105,88 +144,51 @@
                 ]);
                 configData = parseCSV(cRes);
                 scenarioData = parseCSV(sRes);
-                
                 initMinimap();
                 applyTitleConfig();
                 playPoint(currentPoint);
-            } catch (e) { console.error("BOOT_ERROR: CSV LOAD FAILED"); }
+            } catch (e) { console.error("BOOT_FAILED"); }
         }
 
-        // [v3.1.4] 정규식을 배제하고 글자 단위로 읽는 수동 파서 (띄어쓰기 완전 보존)
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
             const headers = lines[0].replace('#', '').split(',').map(h => h.trim());
-
             return lines.slice(1).filter(line => line.trim()).map(line => {
-                let values = [];
-                let current = '';
-                let inQuotes = false;
-
+                let values = []; let current = ''; let inQuotes = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
                     if (char === '"') {
-                        // 연속된 큰따옴표("") 처리
-                        if (inQuotes && line[i+1] === '"') {
-                            current += '"'; i++;
-                        } else {
-                            inQuotes = !inQuotes;
-                        }
-                    } else if (char === ',' && !inQuotes) {
-                        values.push(current); // trim() 하지 않음 (데이터 순수성 보존)
-                        current = '';
-                    } else {
-                        current += char;
-                    }
+                        if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+                        else { inQuotes = !inQuotes; }
+                    } else if (char === ',' && !inQuotes) { values.push(current); current = ''; }
+                    else { current += char; }
                 }
                 values.push(current);
-
-                // 앞뒤 불필요한 공백만 제거하고 헤더 맵핑
                 return headers.reduce((obj, h, i) => {
-                    let val = values[i] ? values[i].trim() : "";
-                    obj[h] = val;
+                    obj[h] = values[i] ? values[i].trim() : "";
                     return obj;
                 }, {});
             });
-        }
-
-        function applyTitleConfig() {
-            const row = scenarioData.find(r => r.point === 'TITLE');
-            if (row) {
-                document.getElementById('ui-title').innerText = row.Content;
-                if (row.AreaID) applyTheme(row.AreaID);
-            }
-        }
-
-        function initMinimap() {
-            const map = document.getElementById('minimap');
-            map.style.gridTemplateColumns = `repeat(6, 1fr)`;
-            for (let i = 0; i < 42; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
-                cell.id = `p-${x}-${y}`;
-                map.appendChild(cell);
-            }
         }
 
         async function playPoint(point) {
             if (isTyping) return;
             const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
             if (events.length === 0) return;
-
+            
             currentPoint = point;
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
 
             for (const ev of events) {
-                let boxClass = 'box-solid';
+                let boxClass = 'box-solid'; // 기본 (나/다이버)
                 let text = ev.Content || "";
                 
                 if (text.includes('[시스템]')) {
-                    text = text.replace('[시스템]', '[system]');
+                    text = text.replace('[시스템]', '[SYSTEM]');
                     boxClass = 'box-system';
-                } else if (text.startsWith('[!]') || text.includes('의뢰인:')) {
-                    boxClass = 'box-filled';
+                } else if (text.includes('지령실:') || text.includes('가디언:')) {
+                    boxClass = 'box-filled'; // 상대방 대사 스타일
                 }
 
                 await typeWriter(text, boxClass);
@@ -206,12 +208,22 @@
             div.className = `msg-box ${boxClass}`;
             container.appendChild(div);
 
+            const contentSpan = document.createElement('span');
+            div.appendChild(contentSpan);
+            
+            // 깜빡이는 커서 생성 및 추가
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            div.appendChild(cursor);
+
             for (let char of text) {
-                if (shouldSkip) { div.innerText = text; break; }
-                div.innerText += char;
-                await new Promise(r => setTimeout(r, window.typeSpeed || 30));
+                if (shouldSkip) { contentSpan.innerText = text; break; }
+                contentSpan.innerText += char;
                 container.scrollTop = container.scrollHeight;
+                await new Promise(r => setTimeout(r, window.typeSpeed || 30));
             }
+            
+            // 타이핑 종료 후 커서는 유지하되, 다음 박스가 생기면 이전 커서는 제거하거나 숨김 가능
             isTyping = false;
         }
 
@@ -235,10 +247,14 @@
                 btn.innerText = label.startsWith('>') ? label : `> ${label}`;
                 btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
-            } else {
-                btn.innerText = "[ --- ]";
-                btn.disabled = true;
-                btn.onclick = null;
+            } else { btn.innerText = "[ --- ]"; btn.disabled = true; btn.onclick = null; }
+        }
+
+        function applyTitleConfig() {
+            const row = scenarioData.find(r => r.point === 'TITLE');
+            if (row) {
+                document.getElementById('ui-title').innerText = row.Content;
+                if (row.AreaID) applyTheme(row.AreaID);
             }
         }
 
@@ -246,21 +262,25 @@
             if (currentMode === modeId) return;
             const cfg = configData.find(c => c.ID === modeId);
             if (!cfg) return;
-
             const r = document.documentElement.style;
             r.setProperty('--theme', cfg.ThemeColor);
             r.setProperty('--sub', cfg.SubColor);
             r.setProperty('--bg', cfg.BGColor);
-
-            let protocol = "DREAMCATCHER PROTOCOL - ";
-            if (modeId === "M1") protocol += "INITIAL INQUIRY";
-            else if (modeId === "M2") protocol += "NEURAL DIVING";
-            else if (modeId === "M3") protocol += "DATA EXTRACTION";
-            else protocol += modeId;
-
-            document.getElementById('ui-protocol').innerText = protocol;
+            document.getElementById('ui-protocol').innerText = `DREAMCATCHER PROTOCOL - ${modeId}`;
             window.typeSpeed = parseInt(cfg.Speed) || 30;
             currentMode = modeId;
+        }
+
+        function initMinimap() {
+            const map = document.getElementById('minimap');
+            map.style.gridTemplateColumns = `repeat(6, 1fr)`;
+            for (let i = 0; i < 42; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
+                cell.id = `p-${x}-${y}`;
+                map.appendChild(cell);
+            }
         }
 
         window.onload = boot;
