@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER - v3.3.1</title>
+    <title>DREAMCATCHER - v3.3.5</title>
     <style>
         :root {
             --main-orange: #FF8C00;
@@ -39,17 +39,13 @@
             overflow: hidden; text-overflow: ellipsis;
         }
         .q-btn:hover:not(:disabled) { background: var(--main-orange); color: #000; }
+        .q-btn.next-btn { background: var(--dim-orange); text-align: center; border-style: dashed; }
         .q-btn:disabled { opacity: 0.2; cursor: default; }
 
-        /* [v3.2.7] 확정 메시지 스타일 (13px & 띄어쓰기 보존 & 반투명) */
         .msg { max-width: 85%; padding: 10px; line-height: 1.5; white-space: pre-wrap; font-size: 13px; word-break: break-all; }
         .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }
         .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; }
-        
-        /* 지령실: 13px + 반투명 이중선 */
         .commander { align-self: center; width: 90%; text-align: center; background: rgba(255, 140, 0, 0.15); border: 1px double rgba(255, 140, 0, 0.6); border-radius: 5px; }
-        
-        /* 시스템: 12px + 반투명 점선 */
         .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: rgba(255, 140, 0, 0.1); border: 1px dashed rgba(255, 140, 0, 0.5); border-radius: 4px; }
     </style>
 </head>
@@ -82,6 +78,7 @@
         let scenarioMap = new Map();
         let configMap = new Map();
         let currentPoint = "1-1";
+        let currentLineIndex = 0; // 좌표 내 대사 시퀀스 추적용
         let isTyping = false, shouldSkip = false;
 
         async function boot() {
@@ -134,45 +131,57 @@
             window.typeSpeed = parseInt(cfg.Speed) || 30;
         }
 
-        async function playPoint(targetPoint) {
+        async function playPoint(targetPoint, isNextCall = false) {
             if (isTyping) return;
             
-            // [수선된 로직] 계층형 탈출 및 복귀 계산
             let finalPoint = targetPoint;
+            let isReturning = false;
 
-            // 좌표가 비어있거나, BACK이거나, - 인 경우 부모 탐색
+            // 1. 좌표 계산 (복귀 판별)
             if (!finalPoint || finalPoint === "BACK" || finalPoint === "-") {
                 const parts = currentPoint.split('-');
                 if (parts.length > 1) {
-                    // 현재 1-2-A-1 이라면 1-2-A 로 깎음
                     finalPoint = parts.slice(0, -1).join('-');
+                    isReturning = true; // 부모로 후진함
                 } else {
-                    // 더 이상 깎을 하이픈이 없으면 제자리 유지
                     finalPoint = currentPoint;
                 }
             }
 
-            const events = scenarioMap.get(finalPoint);
-            if (!events) {
-                console.warn("POINT_NOT_FOUND:", finalPoint);
-                return;
-            }
+            // 2. 인덱스 초기화 (새로운 좌표 진입 시에만)
+            if (!isNextCall) currentLineIndex = 0;
 
-            // 모든 검증이 끝난 후 현재 포인트 확정 갱신
+            const events = scenarioMap.get(finalPoint);
+            if (!events) return;
+
+            // 3. 상태 업데이트
             currentPoint = finalPoint;
             document.getElementById('val-point').innerText = currentPoint;
             updateMinimap(currentPoint);
 
-            for (const ev of events) {
-                let text = ev.Content || "";
+            // 4. 대사 출력 로직 (복귀 시 생략)
+            if (isReturning) {
+                // 복귀 시에는 마지막 줄의 버튼만 즉시 로드
+                currentLineIndex = events.length - 1;
+                updateButtons(events[currentLineIndex]);
+                // 복귀 피드백 (선택사항)
+                // await typeWriter("[시스템] 상위 구역으로 복귀했습니다.", "system");
+            } else {
+                const ev = events[currentLineIndex];
                 let boxClass = "me"; 
-                if (text.includes('[시스템]') || text.includes('[!]')) boxClass = 'system';
-                else if (text.includes('지령실:')) boxClass = 'commander';
-                else if (text.includes('의뢰인:')) boxClass = 'subject';
+                if (ev.Content.includes('[시스템]') || ev.Content.includes('[!]')) boxClass = 'system';
+                else if (ev.Content.includes('지령실:')) boxClass = 'commander';
+                else if (ev.Content.includes('의뢰인:')) boxClass = 'subject';
 
-                await typeWriter(text, boxClass);
+                await typeWriter(ev.Content, boxClass);
+
+                // 5. 버튼 분기 (NEXT인가 4지선다인가)
+                if (currentLineIndex < events.length - 1) {
+                    renderNextButton();
+                } else {
+                    updateButtons(ev);
+                }
             }
-            updateButtons(events[events.length - 1]);
         }
 
         async function typeWriter(text, boxClass) {
@@ -193,6 +202,45 @@
 
         function skipTypewriter() { if (isTyping) shouldSkip = true; }
 
+        function renderNextButton() {
+            clearButtons();
+            const btn = document.getElementById('opt1');
+            btn.innerText = ">>> NEXT";
+            btn.className = "q-btn next-btn";
+            btn.disabled = false;
+            btn.onclick = (e) => { 
+                e.stopPropagation(); 
+                currentLineIndex++; 
+                btn.className = "q-btn"; // 스타일 초기화
+                playPoint(currentPoint, true); 
+            };
+        }
+
+        function updateButtons(ev) {
+            clearButtons();
+            setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
+            setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
+            setBtn(document.getElementById('opt3'), ev.Opt3, ev.T3_point);
+            setBtn(document.getElementById('opt4'), ev.Opt4, ev.T4_point);
+        }
+
+        function clearButtons() {
+            for(let i=1; i<=4; i++) {
+                const btn = document.getElementById('opt'+i);
+                btn.innerText = "[ --- ]";
+                btn.className = "q-btn";
+                btn.disabled = true;
+                btn.onclick = null;
+            }
+        }
+
+        function setBtn(btn, label, target) {
+            if (label && label !== "-" && label !== "" && label !== "[ --- ]") {
+                btn.innerText = label; btn.disabled = false;
+                btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
+            }
+        }
+
         function initMinimap() {
             const map = document.getElementById('minimap');
             for (let i = 0; i < 42; i++) {
@@ -205,26 +253,11 @@
         }
 
         function updateMinimap(point) {
-            // 하이픈 앞 2마디(X-Y)만 추출하여 미니맵 위치 특정
             const parts = point.split('-');
             const mapPos = parts.slice(0, 2).join('-');
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
             const cell = document.getElementById(`p-${mapPos}`);
             if (cell) cell.classList.add('active');
-        }
-
-        function updateButtons(ev) {
-            setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
-            setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
-            setBtn(document.getElementById('opt3'), ev.Opt3, ev.T3_point);
-            setBtn(document.getElementById('opt4'), ev.Opt4, ev.T4_point);
-        }
-
-        function setBtn(btn, label, target) {
-            if (label && label !== "-" && label !== "" && label !== "[ --- ]") {
-                btn.innerText = label; btn.disabled = false;
-                btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
-            } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
         }
 
         window.onload = boot;
