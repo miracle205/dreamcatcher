@@ -1,4 +1,4 @@
 #ID|AreaName|ThemeColor|SubColor|BGColor|Speed|Desc
 M1|INITIAL INQUIRY|#33FF33|"rgba(0|68|0|0.4)"|#050505|20|Green 테마: 사전 조사 단계
-M2|NEURAL DIVE|#FF8C00|"rgba(128|70|0|0.3)"|#0B0500|25|Amber 테마: 심층 의식 동조
-M3|DATA EXTRACTION|#FF4500|"rgba(85|17|0|0.4)"|#000505|30|Red 테마: 최종 데이터 인양
+M2|NEURAL DIVE|#FF8C00|"rgba(128|70|0|0.3)"|#0B0500|20|Amber 테마: 심층 의식 동조
+M3|DATA EXTRACTION|#FF4500|"rgba(85|17|0|0.4)"|#000505|22|Red 테마: 최종 데이터 인양
