@@ -50,7 +50,7 @@
             border-top: 2px solid var(--main-orange); 
             background: #1a0f00; flex-shrink: 0;
             padding: 10px; box-sizing: border-box;
-            height: 180px; /* 버튼 4개가 안전하게 들어가는 높이 */
+            height: 200px; /* 버튼 4개가 안전하게 들어가는 높이 */
         }
 
         /* [2단계 시공] 하단 좌우 분할 */
@@ -72,10 +72,11 @@
 
         /* 버튼 디자인 */
         .q-btn {
-            width: 100%; padding: 10px; background: transparent;
+            width: 100%; padding: 8px 10px; /* 상하패딩을 10에서 8정도로 살짝줄임 */ 
+            background: transparent;
             border: 1px solid var(--main-orange); color: var(--main-orange);
             text-align: left; font-family: inherit; font-size: 13px;
-            cursor: pointer; font-weight: bold; flex-shrink: 0;
+            cursor: pointer; font-weight: bold; flex: 1; min-height: 0;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .q-btn:hover:not(:disabled) { background: var(--main-orange); color: #000; }
@@ -84,8 +85,8 @@
         /* 메시지 박스 */
         .msg { max-width: 85%; padding: 10px; font-size: 14px; line-height: 1.5; word-break: keep-all; }
         .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; }
-        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }
-        .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: var(--dim-orange); border: 1px dashed var(--main-orange); }
+        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }  //플레이어 대사
+        .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: var(--dim-orange); border: 1px dashed var(--main-orange); } //시스템 알림
     </style>
 </head>
 <body onclick="skipTypewriter()">
