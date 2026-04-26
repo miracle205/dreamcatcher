@@ -1,0 +1,15 @@
+AreaID|AreaName|AreaDesc|point|Content|Opt1|T1_point|Opt2|T2_point|Feedback|Action
+M2|-|-|TITLE|CASE: FIRST DIVE|-|-|-|-|-|-
+CORE_01|Surface|ID: #109|1-1|[시스템] 다이빙 성공. 동기화율 100%.|-|-|-|-|-|-
+CORE_01|-|-|1-1|지령실: 다이버,들리나? 너는 현재 표층 의식의 중력공간에 진입했다.|> 이동|1-2|> 주변조사|1-2|-|-
+CORE_01|-|-|1-2|다이버: 들린다. 그런데 이 구역| 뭔가 불쾌할 정도로 정적이네.|> Access Data|1-3|-|-|-|-
+CORE_01|-|-|1-2|지령실: 잡담은 생략해라. 우선 경로 상의 데이터 파편을 회수해라.|> Access Data|1-3|-|-|-|-
+CORE_01|-|-|1-3|[!] 경고: 표층 방어 기제 감지.|* Salvage Fragment|1-3|> To Deep Pass|1-4|인양 완료: 동기화 유지.|SYNC+5
+CORE_01|-|-|1-3|지령실: 가디언은 이미 근처에 왔을거다. 서둘러라.|* Salvage Fragment|1-3|> To Deep Pass|1-4|인양 완료: 동기화 유지.|SYNC+5
+CORE_01|-|-|1-4|다이버: 통로 발견. 그런데 이상한 소리가 들리는 것 같은데?|> Enter Deep Layer|1-5|-|-|-|-
+CORE_01|-|-|1-4|지령실: 추적 시작 30M 전이다. 뒤를 보지 말고 뛰어.|> Enter Deep Layer|1-5|-|-|-|-
+CORE_01|-|-|1-5|[시스템] 가디언(G) 활성화.|> Dash to Exit|1-6|-|-|-|-
+CORE_01|-|-|1-5|지령실: 타겟이 널 포착했다. 지금부터는 경로 이탈 시 즉시 차단된다.|> Dash to Exit|1-6|-|-|-|-
+CORE_01|-|-|1-6|다이버: 거의 다 왔다. 빛이 보인다.|> Final Deep Entry|9-9|-|-|-|-
+CORE_01|-|-|1-6|지령실: 심층 진입구까지 10M. 도약해!|> Final Deep Entry|9-9|-|-|-|-
+CORE_01|-|-|9-9|[시스템] 심층 의식 진입 성공. 표층 연결 종료. 심층의식의 층으로 내려갑니다 가압장치 준비중...|(Next Episode)|EXIT|-|-|-|LOG_ALL
