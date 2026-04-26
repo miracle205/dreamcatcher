@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER - TEXT DATA SYSTEM</title>
+    <title>DREAMCATCHER - COMMANDER UPDATE</title>
     <style>
         :root {
             --main-orange: #FF8C00;
@@ -11,7 +11,6 @@
             --bg-black: #0a0a0a;
         }
 
-        /* 근본 골조 유지 */
         body { font-family: 'Courier New', Courier, monospace; background-color: var(--bg-black); color: var(--main-orange); margin: 0; padding: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; }
         #game-container { width: 100%; max-width: 500px; height: 100%; display: flex; flex-direction: column; border-left: 1px solid var(--main-orange); border-right: 1px solid var(--main-orange); background: #111; position: relative; }
 
@@ -22,7 +21,6 @@
 
         #log-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #000; }
 
-        /* 하단 레이아웃 보정: 높이 200px 상향 및 버튼 정렬 최적화 */
         .control-panel { border-top: 2px solid var(--main-orange); background: #1a0f00; flex-shrink: 0; padding: 10px; box-sizing: border-box; height: 200px; }
         .panel-layout { display: flex; gap: 10px; height: 100%; }
         
@@ -43,10 +41,26 @@
         .q-btn:hover:not(:disabled) { background: var(--main-orange); color: #000; }
         .q-btn:disabled { opacity: 0.2; cursor: default; }
 
-        .msg { max-width: 85%; padding: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: keep-all; }
-        .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; }
-        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }
-        .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: var(--dim-orange); border: 1px dashed var(--main-orange); }
+        /* 메시지 기본 설정 (띄어쓰기 보존 포함) */
+        .msg { max-width: 85%; padding: 10px; line-height: 1.5; word-break: keep-all; white-space: pre-wrap; }
+        
+        /* 나 & 의뢰인 (14px) */
+        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; font-size: 14px; }
+        .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; font-size: 14px; }
+
+        /* [신규] 지령실 전용 (14px + 반투명 + 이중선) */
+        .msg.commander { 
+            align-self: center; width: 90%; text-align: center; font-size: 14px; 
+            background: rgba(255, 140, 0, 0.15); border: 1px double rgba(255, 140, 0, 0.6); 
+            border-radius: 5px; color: var(--main-orange);
+        }
+
+        /* [개편] 시스템 메시지 (12px + 지령실 반투명 공법 이식) */
+        .msg.system { 
+            align-self: center; width: 90%; text-align: center; font-size: 12px; 
+            background: rgba(255, 140, 0, 0.1); border: 1px dashed rgba(255, 140, 0, 0.5); 
+            border-radius: 4px; color: var(--main-orange);
+        }
     </style>
 </head>
 <body onclick="skipTypewriter()">
@@ -78,43 +92,35 @@
 
     <script>
         let scenarioData = [], configData = [];
-        let currentPoint = "1-1", currentMode = "", syncValue = 100.0;
+        let currentPoint = "1-1", currentMode = "";
         let isTyping = false, shouldSkip = false;
 
         async function boot() {
             try {
-                // [시공] 확장자를 .txt로 변경하여 호출
                 const [cRes, sRes] = await Promise.all([
                     fetch('config.txt').then(r => r.text()),
                     fetch('scenario.txt').then(r => r.text())
                 ]);
                 configData = parseTXT(cRes);
                 scenarioData = parseTXT(sRes);
-
                 initMinimap();
-                
                 const titleRow = scenarioData.find(r => r.point === 'TITLE');
                 if (titleRow) {
                     document.getElementById('ui-title').innerText = titleRow.Content;
                     if (titleRow.AreaID) applyTheme(titleRow.AreaID.trim());
                 }
-
                 playPoint(currentPoint);
             } catch (e) { console.error("BOOT_FAILED", e); }
         }
 
-        // [근본 대책] 쉼표 영향 없는 세로 바(|) 전용 파서
         function parseTXT(text) {
             const lines = text.split(/\r?\n/).filter(l => l.trim());
             if (lines.length === 0) return [];
-
-            // 첫 줄 헤더에서 '#' 제거 후 세로 바(|)로 분리
             const headers = lines[0].replace('#', '').split('|').map(h => h.trim());
-            
             return lines.slice(1).map(line => {
                 const values = line.split('|').map(v => v.trim());
                 return headers.reduce((obj, h, i) => {
-                    obj[h] = values[i] || "";
+                    obj[h] = (values[i] || "").trim();
                     return obj;
                 }, {});
             });
@@ -134,18 +140,23 @@
             if (isTyping) return;
             const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
             if (events.length === 0) return;
-            
             currentPoint = point;
             document.getElementById('val-point').innerText = point;
             updateMinimap(point);
-
             for (const ev of events) {
                 let text = ev.Content || "";
                 let boxClass = "me"; 
-                if (text.includes('[시스템]')) boxClass = 'system';
-                else if (text.includes('지령실:')) boxClass = 'system'; 
-                else if (text.includes('의뢰인:')) boxClass = 'subject';
 
+                // [지시사항 반영] 판별 로직
+                if (text.includes('[시스템]') || text.includes('[!]')) {
+                    boxClass = 'system';
+                } 
+                else if (text.includes('지령실:')) {
+                    boxClass = 'commander';
+                }
+                else if (text.includes('의뢰인:')) {
+                    boxClass = 'subject';
+                }
                 await typeWriter(text, boxClass);
             }
             updateButtons(events[events.length - 1]);
@@ -157,7 +168,6 @@
             const div = document.createElement('div');
             div.className = `msg ${boxClass}`;
             container.appendChild(div);
-            
             for (let char of text) {
                 if (shouldSkip) { div.innerText = text; break; }
                 div.innerText += char;
@@ -168,7 +178,6 @@
         }
 
         function skipTypewriter() { if (isTyping) shouldSkip = true; }
-
         function initMinimap() {
             const map = document.getElementById('minimap');
             for (let i = 0; i < 42; i++) {
@@ -179,27 +188,23 @@
                 map.appendChild(cell);
             }
         }
-
         function updateMinimap(point) {
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
             const cell = document.getElementById(`p-${point}`);
             if (cell) cell.classList.add('active');
         }
-
         function updateButtons(ev) {
             setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
             setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
             setBtn(document.getElementById('opt3'), ev.Opt3, ev.T3_point);
             setBtn(document.getElementById('opt4'), ev.Opt4, ev.T4_point);
         }
-
         function setBtn(btn, label, target) {
             if (label && label !== "-" && label !== "") {
                 btn.innerText = label; btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
             } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
         }
-
         window.onload = boot;
     </script>
 </body>
