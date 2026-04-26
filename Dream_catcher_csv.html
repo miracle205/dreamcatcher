@@ -3,81 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER v3.2.3</title>
+    <title>DREAMCATCHER - ROOT RECOVERY</title>
     <style>
         :root {
-            --theme: #FF8C00; 
-            --sub: rgba(255, 140, 0, 0.15); 
-            --bg: #0a0a0a;
-            --font-main: 'Courier New', Courier, monospace;
+            --main-orange: #FF8C00;
+            --dim-orange: rgba(255, 140, 0, 0.15);
+            --bg-black: #0a0a0a;
         }
 
-        body {
-            background-color: var(--bg); color: var(--theme);
-            font-family: var(--font-main); margin: 0; padding: 0;
-            display: flex; justify-content: center; height: 100vh;
-            overflow: hidden; box-sizing: border-box;
+        /* [초기 소스 공법] 100dvh와 flex-column으로 상하 절대 분리 */
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            background-color: var(--bg-black); 
+            color: var(--main-orange); 
+            margin: 0; padding: 0; 
+            display: flex; justify-content: center; 
+            height: 100dvh; overflow: hidden; 
         }
 
-        #game-container {
-            width: 100%; max-width: 600px; height: 100%;
-            display: flex; flex-direction: column;
-            border-left: 1.5px solid var(--theme); border-right: 1.5px solid var(--theme);
-            background: #0d0d0d;
+        #game-container { 
+            width: 100%; max-width: 500px; height: 100%; 
+            display: flex; flex-direction: column; 
+            border-left: 1px solid var(--main-orange); 
+            border-right: 1px solid var(--main-orange); 
+            background: #111; position: relative; 
         }
 
-        #header {
-            flex: 0 0 auto; padding: 12px 15px; border-bottom: 2px solid var(--theme);
-            background: rgba(0, 0, 0, 0.9);
+        /* 헤더: 고정 (밀려나지 않음) */
+        .header { 
+            padding: 15px; border-bottom: 2px solid var(--main-orange); 
+            background: #1a0f00; flex-shrink: 0; 
         }
-        .protocol-line { font-size: 10px; letter-spacing: 1.5px; opacity: 0.8; font-weight: bold; }
-        .case-line { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 4px 0; color: var(--theme); }
-        .status-row { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.7; }
+        .protocol-line { font-size: 10px; letter-spacing: 2px; opacity: 0.8; }
+        .case-line { font-size: 18px; font-weight: bold; margin: 5px 0; }
+        .status-row { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.8; }
 
+        /* 로그 영역: 가변 (이 안에서만 스크롤) */
         #log-container { 
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column; 
-            gap: 15px; padding: 20px; box-sizing: border-box;
+            flex: 1; overflow-y: auto; padding: 20px; 
+            display: flex; flex-direction: column; gap: 15px; 
+            background: linear-gradient(to bottom, #111, #0a0a0a);
         }
 
-        /* 메시지 디자인 위계 */
-        .msg-box { max-width: 85%; padding: 10px 14px; font-size: 14px; line-height: 1.5; position: relative; word-break: keep-all; white-space: pre-wrap; }
-        .box-subject { align-self: flex-start; background: var(--theme); color: #000; font-weight: bold; border-radius: 12px 12px 12px 2px; }
-        .box-me { align-self: flex-end; background: #000; color: var(--theme); border: 1.2px solid var(--theme); border-radius: 12px 12px 2px 12px; }
-        .box-system { align-self: center; width: 90%; background: var(--sub); border: 1px dashed var(--theme); color: var(--theme); filter: brightness(1.3); font-size: 12px; text-align: center; }
-        .box-cmd { align-self: flex-start; background: transparent; border: 1.5px dotted var(--theme); color: var(--theme); padding: 8px; border-radius: 4px; }
-        .box-none { align-self: center; width: 100%; text-align: center; opacity: 0.8; font-style: italic; }
-
-        /* [시공] 하단 높이 축소 (22vh) */
-        #bottom-interface {
-            flex: 0 0 22vh; display: flex; gap: 10px; padding: 10px;
-            border-top: 2px solid var(--theme); background: #050505;
+        /* 하단 조작 패널: 고정 (flex-shrink: 0으로 절대 사수) */
+        .control-panel { 
+            border-top: 2px solid var(--main-orange); 
+            background: #1a0f00; flex-shrink: 0;
+            padding: 10px; box-sizing: border-box;
+            height: 180px; /* 버튼 4개가 안전하게 들어가는 높이 */
         }
 
-        #minimap-sector { flex: 3.5; border: 1.2px solid var(--theme); display: flex; align-items: center; justify-content: center; background: #000; }
-        #minimap { display: grid; gap: 2px; }
-        .cell { width: 12px; height: 12px; background: #1a1a1a; }
-        .cell.active { background: var(--theme); box-shadow: 0 0 8px var(--theme); }
-
-        #action-sector { flex: 6.5; display: flex; flex-direction: column; gap: 4px; justify-content: space-between; }
-        button {
-            flex: 1; background: transparent; border: 1.2px solid var(--theme); 
-            color: var(--theme); text-align: left; padding: 0 10px;
-            font-family: inherit; font-size: 13px; cursor: pointer; font-weight: bold;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        /* [2단계 시공] 하단 좌우 분할 */
+        .panel-layout { display: flex; gap: 10px; height: 100%; }
+        
+        #minimap-sector { 
+            flex: 0 0 120px; border: 1px solid var(--main-orange);
+            display: flex; align-items: center; justify-content: center;
+            background: #000;
         }
-        button:hover:not(:disabled) { background: var(--theme); color: #000; }
-        button:disabled { opacity: 0.1; }
+        #minimap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+        .cell { width: 12px; height: 12px; background: #222; }
+        .cell.active { background: var(--main-orange); box-shadow: 0 0 5px var(--main-orange); }
 
-        .cursor { display: inline-block; width: 8px; height: 14px; background: currentColor; animation: blink 0.8s infinite; vertical-align: middle; }
-        @keyframes blink { 50% { opacity: 0; } }
+        #action-sector { 
+            flex: 1; display: flex; flex-direction: column; 
+            gap: 5px; overflow-y: auto; 
+        }
+
+        /* 버튼 디자인 */
+        .q-btn {
+            width: 100%; padding: 10px; background: transparent;
+            border: 1px solid var(--main-orange); color: var(--main-orange);
+            text-align: left; font-family: inherit; font-size: 13px;
+            cursor: pointer; font-weight: bold; flex-shrink: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .q-btn:hover:not(:disabled) { background: var(--main-orange); color: #000; }
+        .q-btn:disabled { opacity: 0.2; cursor: default; }
+
+        /* 메시지 박스 */
+        .msg { max-width: 85%; padding: 10px; font-size: 14px; line-height: 1.5; word-break: keep-all; }
+        .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; }
+        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }
+        .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: var(--dim-orange); border: 1px dashed var(--main-orange); }
     </style>
 </head>
 <body onclick="skipTypewriter()">
 
     <div id="game-container">
-        <div id="header">
-            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL - LOADING...</div>
-            <div id="ui-title" class="case-line">---------</div>
+        <div class="header">
+            <div id="ui-protocol" class="protocol-line">DREAMCATCHER PROTOCOL</div>
+            <div id="ui-title" class="case-line">LOADING...</div>
             <div class="status-row">
                 <span>SYNC: <span id="val-sync">100.0</span>%</span>
                 <span>POINT: <span id="val-point">--</span></span>
@@ -86,18 +102,23 @@
 
         <div id="log-container"></div>
 
-        <div id="bottom-interface">
-            <div id="minimap-sector"><div id="minimap"></div></div>
-            <div id="action-sector">
-                <button id="opt1" disabled>[ --- ]</button>
-                <button id="opt2" disabled>[ --- ]</button>
-                <button id="opt3" disabled>[ --- ]</button>
-                <button id="opt4" disabled>[ --- ]</button>
+        <div class="control-panel">
+            <div class="panel-layout">
+                <div id="minimap-sector">
+                    <div id="minimap"></div>
+                </div>
+                <div id="action-sector">
+                    <button id="opt1" class="q-btn" disabled>[ --- ]</button>
+                    <button id="opt2" class="q-btn" disabled>[ --- ]</button>
+                    <button id="opt3" class="q-btn" disabled>[ --- ]</button>
+                    <button id="opt4" class="q-btn" disabled>[ --- ]</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // [로직부는 v3.2.3의 안정된 파서와 초기화 순서를 유지합니다]
         let scenarioData = [], configData = [];
         let currentPoint = "1-1", currentMode = "", syncValue = 100.0;
         let isTyping = false, shouldSkip = false;
@@ -113,7 +134,6 @@
 
                 initMinimap();
                 
-                // [시공] 타이틀 및 테마 초기화 로직 강화
                 const titleRow = scenarioData.find(r => r.point === 'TITLE');
                 if (titleRow) {
                     document.getElementById('ui-title').innerText = titleRow.Content;
@@ -138,25 +158,18 @@
                     else { current += char; }
                 }
                 values.push(current.trim());
-                return headers.reduce((obj, h, i) => {
-                    obj[h] = values[i] || "";
-                    return obj;
-                }, {});
+                return headers.reduce((obj, h, i) => { obj[h] = values[i] || ""; return obj; }, {});
             });
         }
 
         async function applyTheme(modeId) {
-            if (currentMode === modeId) return;
             const cfg = configData.find(c => c.ID === modeId);
             if (!cfg) return;
-            
             const r = document.documentElement.style;
-            r.setProperty('--theme', cfg.ThemeColor);
-            r.setProperty('--sub', cfg.SubColor);
-            r.setProperty('--bg', cfg.BGColor);
+            r.setProperty('--main-orange', cfg.ThemeColor);
+            r.setProperty('--dim-orange', cfg.SubColor);
             document.getElementById('ui-protocol').innerText = `DREAMCATCHER PROTOCOL - ${cfg.AreaName}`;
             window.typeSpeed = parseInt(cfg.Speed) || 30;
-            currentMode = modeId;
         }
 
         async function playPoint(point) {
@@ -170,49 +183,44 @@
 
             for (const ev of events) {
                 let text = ev.Content || "";
-                let boxClass = "box-me"; 
-                let isItalic = false;
+                let boxClass = "me"; 
+                if (text.includes('[시스템]')) boxClass = 'system';
+                else if (text.includes('지령실:')) boxClass = 'system'; // 스타일 변주 가능
+                else if (text.includes('의뢰인:')) boxClass = 'subject';
 
-                if (text.includes('[시스템]') || text.includes('[SYSTEM]')) boxClass = 'box-system';
-                else if (text.includes('지령실:') || text.includes('본부:')) boxClass = 'box-cmd';
-                else if (text.includes('의뢰인:') || text.includes('다이버:')) boxClass = text.includes('의뢰인:') ? 'box-subject' : 'box-me';
-                else if (text.startsWith('(') || text.startsWith('<')) { boxClass = 'box-none'; isItalic = true; }
-
-                await typeWriter(text, boxClass, isItalic);
-                
-                if (ev.Action && ev.Action.includes('SYNC')) {
-                    const val = parseFloat(ev.Action.split('+')[1]) || 0;
-                    syncValue += val;
-                    document.getElementById('val-sync').innerText = syncValue.toFixed(1);
-                }
+                await typeWriter(text, boxClass);
             }
             updateButtons(events[events.length - 1]);
         }
 
-        async function typeWriter(text, boxClass, isItalic) {
+        async function typeWriter(text, boxClass) {
             isTyping = true; shouldSkip = false;
             const container = document.getElementById('log-container');
             const div = document.createElement('div');
-            div.className = `msg-box ${boxClass} ${isItalic ? 'italic' : ''}`;
+            div.className = `msg ${boxClass}`;
             container.appendChild(div);
             
-            const contentSpan = document.createElement('span');
-            div.appendChild(contentSpan);
-            const cursor = document.createElement('span');
-            cursor.className = 'cursor';
-            div.appendChild(cursor);
-
             for (let char of text) {
-                if (shouldSkip) { contentSpan.innerText = text; break; }
-                contentSpan.innerText += char;
+                if (shouldSkip) { div.innerText = text; break; }
+                div.innerText += char;
                 container.scrollTop = container.scrollHeight;
                 await new Promise(r => setTimeout(r, window.typeSpeed || 30));
             }
-            cursor.remove();
             isTyping = false;
         }
 
         function skipTypewriter() { if (isTyping) shouldSkip = true; }
+
+        function initMinimap() {
+            const map = document.getElementById('minimap');
+            for (let i = 0; i < 42; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
+                cell.id = `p-${x}-${y}`;
+                map.appendChild(cell);
+            }
+        }
 
         function updateMinimap(point) {
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
@@ -228,23 +236,10 @@
         }
 
         function setBtn(btn, label, target) {
-            if (label && label.trim() && label !== "-") {
-                btn.innerText = label.startsWith('>') ? label : `> ${label}`;
-                btn.disabled = false;
+            if (label && label !== "-") {
+                btn.innerText = label; btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
             } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
-        }
-
-        function initMinimap() {
-            const map = document.getElementById('minimap');
-            map.style.gridTemplateColumns = `repeat(6, 1fr)`;
-            for (let i = 0; i < 42; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                const x = (i % 6) + 1; const y = Math.floor(i / 6) + 1;
-                cell.id = `p-${x}-${y}`;
-                map.appendChild(cell);
-            }
         }
 
         window.onload = boot;
