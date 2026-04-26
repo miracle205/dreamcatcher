@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DREAMCATCHER - COMMANDER UPDATE</title>
+    <title>DREAMCATCHER - v3.3.1</title>
     <style>
         :root {
             --main-orange: #FF8C00;
@@ -41,26 +41,16 @@
         .q-btn:hover:not(:disabled) { background: var(--main-orange); color: #000; }
         .q-btn:disabled { opacity: 0.2; cursor: default; }
 
-        /* 메시지 기본 설정 (띄어쓰기 보존 포함) */
-        .msg { max-width: 85%; padding: 10px; line-height: 1.5; word-break: keep-all; white-space: pre-wrap; }
+        /* [v3.2.7] 확정 메시지 스타일 (13px & 띄어쓰기 보존 & 반투명) */
+        .msg { max-width: 85%; padding: 10px; line-height: 1.5; white-space: pre-wrap; font-size: 13px; word-break: break-all; }
+        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; }
+        .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; }
         
-        /* 나 & 의뢰인 (13px) */
-        .me { align-self: flex-end; border: 1px solid var(--main-orange); border-radius: 10px 10px 0 10px; font-size: 13px; }
-        .subject { align-self: flex-start; background: var(--main-orange); color: #000; border-radius: 10px 10px 10px 0; font-size: 13px; }
-
-        /* [신규] 지령실 전용 (13px + 반투명 + 이중선) */
-        .msg.commander { 
-            align-self: center; width: 90%; text-align: center; font-size: 13px; 
-            background: rgba(255, 140, 0, 0.15); border: 1px double rgba(255, 140, 0, 0.6); 
-            border-radius: 5px; color: var(--main-orange);
-        }
-
-        /* [개편] 시스템 메시지 (12px + 지령실 반투명 공법 이식) */
-        .msg.system { 
-            align-self: center; width: 90%; text-align: center; font-size: 12px; 
-            background: rgba(255, 140, 0, 0.1); border: 1px dashed rgba(255, 140, 0, 0.5); 
-            border-radius: 4px; color: var(--main-orange);
-        }
+        /* 지령실: 13px + 반투명 이중선 */
+        .commander { align-self: center; width: 90%; text-align: center; background: rgba(255, 140, 0, 0.15); border: 1px double rgba(255, 140, 0, 0.6); border-radius: 5px; }
+        
+        /* 시스템: 12px + 반투명 점선 */
+        .system { align-self: center; width: 90%; text-align: center; font-size: 12px; background: rgba(255, 140, 0, 0.1); border: 1px dashed rgba(255, 140, 0, 0.5); border-radius: 4px; }
     </style>
 </head>
 <body onclick="skipTypewriter()">
@@ -74,9 +64,7 @@
                 <span>POINT: <span id="val-point">--</span></span>
             </div>
         </div>
-
         <div id="log-container"></div>
-
         <div class="control-panel">
             <div class="panel-layout">
                 <div id="minimap-sector"><div id="minimap"></div></div>
@@ -91,8 +79,9 @@
     </div>
 
     <script>
-        let scenarioData = [], configData = [];
-        let currentPoint = "1-1", currentMode = "";
+        let scenarioMap = new Map();
+        let configMap = new Map();
+        let currentPoint = "1-1";
         let isTyping = false, shouldSkip = false;
 
         async function boot() {
@@ -101,33 +90,42 @@
                     fetch('config.txt').then(r => r.text()),
                     fetch('scenario.txt').then(r => r.text())
                 ]);
-                configData = parseTXT(cRes);
-                scenarioData = parseTXT(sRes);
+                
+                parseToMap(cRes, configMap, 'ID');
+                parseToMap(sRes, scenarioMap, 'point');
+
                 initMinimap();
-                const titleRow = scenarioData.find(r => r.point === 'TITLE');
-                if (titleRow) {
-                    document.getElementById('ui-title').innerText = titleRow.Content;
-                    if (titleRow.AreaID) applyTheme(titleRow.AreaID.trim());
+                
+                const titleData = scenarioMap.get('TITLE');
+                if (titleData && titleData[0]) {
+                    document.getElementById('ui-title').innerText = titleData[0].Content;
+                    if (titleData[0].AreaID) applyTheme(titleData[0].AreaID);
                 }
+
                 playPoint(currentPoint);
             } catch (e) { console.error("BOOT_FAILED", e); }
         }
 
-        function parseTXT(text) {
+        function parseToMap(text, map, keyName) {
             const lines = text.split(/\r?\n/).filter(l => l.trim());
-            if (lines.length === 0) return [];
+            if (lines.length === 0) return;
             const headers = lines[0].replace('#', '').split('|').map(h => h.trim());
-            return lines.slice(1).map(line => {
-                const values = line.split('|').map(v => v.trim());
-                return headers.reduce((obj, h, i) => {
-                    obj[h] = (values[i] || "").trim();
-                    return obj;
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split('|').map(v => v.trim());
+                const obj = headers.reduce((acc, h, idx) => {
+                    acc[h] = values[idx] || "";
+                    return acc;
                 }, {});
-            });
+                
+                const key = obj[keyName];
+                if (!map.has(key)) map.set(key, []);
+                map.get(key).push(obj);
+            }
         }
 
-        async function applyTheme(modeId) {
-            const cfg = configData.find(c => c.ID === modeId);
+        function applyTheme(modeId) {
+            const cfg = configMap.get(modeId)?.[0];
             if (!cfg) return;
             const r = document.documentElement.style;
             r.setProperty('--main-orange', cfg.ThemeColor);
@@ -136,27 +134,42 @@
             window.typeSpeed = parseInt(cfg.Speed) || 30;
         }
 
-        async function playPoint(point) {
+        async function playPoint(targetPoint) {
             if (isTyping) return;
-            const events = scenarioData.filter(r => r.point === point && r.point !== 'TITLE');
-            if (events.length === 0) return;
-            currentPoint = point;
-            document.getElementById('val-point').innerText = point;
-            updateMinimap(point);
+            
+            // [수선된 로직] 계층형 탈출 및 복귀 계산
+            let finalPoint = targetPoint;
+
+            // 좌표가 비어있거나, BACK이거나, - 인 경우 부모 탐색
+            if (!finalPoint || finalPoint === "BACK" || finalPoint === "-") {
+                const parts = currentPoint.split('-');
+                if (parts.length > 1) {
+                    // 현재 1-2-A-1 이라면 1-2-A 로 깎음
+                    finalPoint = parts.slice(0, -1).join('-');
+                } else {
+                    // 더 이상 깎을 하이픈이 없으면 제자리 유지
+                    finalPoint = currentPoint;
+                }
+            }
+
+            const events = scenarioMap.get(finalPoint);
+            if (!events) {
+                console.warn("POINT_NOT_FOUND:", finalPoint);
+                return;
+            }
+
+            // 모든 검증이 끝난 후 현재 포인트 확정 갱신
+            currentPoint = finalPoint;
+            document.getElementById('val-point').innerText = currentPoint;
+            updateMinimap(currentPoint);
+
             for (const ev of events) {
                 let text = ev.Content || "";
                 let boxClass = "me"; 
+                if (text.includes('[시스템]') || text.includes('[!]')) boxClass = 'system';
+                else if (text.includes('지령실:')) boxClass = 'commander';
+                else if (text.includes('의뢰인:')) boxClass = 'subject';
 
-                // [지시사항 반영] 판별 로직
-                if (text.includes('[시스템]') || text.includes('[!]')) {
-                    boxClass = 'system';
-                } 
-                else if (text.includes('지령실:')) {
-                    boxClass = 'commander';
-                }
-                else if (text.includes('의뢰인:')) {
-                    boxClass = 'subject';
-                }
                 await typeWriter(text, boxClass);
             }
             updateButtons(events[events.length - 1]);
@@ -168,6 +181,7 @@
             const div = document.createElement('div');
             div.className = `msg ${boxClass}`;
             container.appendChild(div);
+            
             for (let char of text) {
                 if (shouldSkip) { div.innerText = text; break; }
                 div.innerText += char;
@@ -178,6 +192,7 @@
         }
 
         function skipTypewriter() { if (isTyping) shouldSkip = true; }
+
         function initMinimap() {
             const map = document.getElementById('minimap');
             for (let i = 0; i < 42; i++) {
@@ -188,23 +203,30 @@
                 map.appendChild(cell);
             }
         }
+
         function updateMinimap(point) {
+            // 하이픈 앞 2마디(X-Y)만 추출하여 미니맵 위치 특정
+            const parts = point.split('-');
+            const mapPos = parts.slice(0, 2).join('-');
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-            const cell = document.getElementById(`p-${point}`);
+            const cell = document.getElementById(`p-${mapPos}`);
             if (cell) cell.classList.add('active');
         }
+
         function updateButtons(ev) {
             setBtn(document.getElementById('opt1'), ev.Opt1, ev.T1_point);
             setBtn(document.getElementById('opt2'), ev.Opt2, ev.T2_point);
             setBtn(document.getElementById('opt3'), ev.Opt3, ev.T3_point);
             setBtn(document.getElementById('opt4'), ev.Opt4, ev.T4_point);
         }
+
         function setBtn(btn, label, target) {
-            if (label && label !== "-" && label !== "") {
+            if (label && label !== "-" && label !== "" && label !== "[ --- ]") {
                 btn.innerText = label; btn.disabled = false;
                 btn.onclick = (e) => { e.stopPropagation(); playPoint(target); };
             } else { btn.innerText = "[ --- ]"; btn.disabled = true; }
         }
+
         window.onload = boot;
     </script>
 </body>
